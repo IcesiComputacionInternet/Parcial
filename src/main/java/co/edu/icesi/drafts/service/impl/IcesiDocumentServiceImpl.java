@@ -71,9 +71,9 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     private void checkIfUsersAreDifferent(UUID icesiUserId1, UUID icesiUserId2){
         if(!icesiUserId1.equals(icesiUserId2)){
-            createIcesiException("The user can not be updated",
+            throw createIcesiException("The user can not be updated",
                     HttpStatus.BAD_REQUEST,
-                    new DetailBuilder(ErrorCode.ERR_400, "User", "can not be updated"));
+                    new DetailBuilder(ErrorCode.ERR_400, "User", "can not be updated")).get();
         }
     }
 
@@ -91,15 +91,15 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     private void checkIfTitleAndTextCouldBeUpdated(IcesiDocument icesiDocument, IcesiDocumentDTO icesiDocumentDTO){
         if(!icesiDocument.getStatus().equals(IcesiDocumentStatus.DRAFT) && !icesiDocument.getStatus().equals(IcesiDocumentStatus.REVISION)){
             if(!icesiDocument.getTitle().equals(icesiDocumentDTO.getTitle())){
-                createIcesiException("The title can not be updated",
+                throw createIcesiException("The title can not be updated",
                         HttpStatus.BAD_REQUEST,
-                        new DetailBuilder(ErrorCode.ERR_400, "Title", "can not be updated because the document status is "+icesiDocument.getStatus().toString()));
+                        new DetailBuilder(ErrorCode.ERR_400, "Title", "can not be updated because the document status is "+icesiDocument.getStatus().toString())).get();
             }
 
             if(!icesiDocument.getText().equals(icesiDocumentDTO.getText())){
-                createIcesiException("The text can not be updated",
+                throw createIcesiException("The text can not be updated",
                         HttpStatus.BAD_REQUEST,
-                        new DetailBuilder(ErrorCode.ERR_400, "Text", "can not be updated because the document status is "+icesiDocument.getStatus().toString()));
+                        new DetailBuilder(ErrorCode.ERR_400, "Text", "can not be updated because the document status is "+icesiDocument.getStatus().toString())).get();
             }
         }
 
@@ -107,9 +107,9 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     private void checkIfNewTitleExists(String newTitle){
         if(Optional.ofNullable(documentRepository.findByTitle(newTitle)).isPresent()){
-            createIcesiException("The title " + newTitle + " already existed",
+            throw createIcesiException("The title " + newTitle + " already existed",
                     HttpStatus.BAD_REQUEST,
-                    new DetailBuilder(ErrorCode.ERR_DUPLICATED, "Document", "Title", newTitle));
+                    new DetailBuilder(ErrorCode.ERR_DUPLICATED, "Document", "Title", newTitle)).get();
         }
     }
 
