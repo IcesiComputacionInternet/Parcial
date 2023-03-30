@@ -18,7 +18,7 @@ import java.util.UUID;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class IcesiDocumentDTO {
-
+    
     private UUID icesiDocumentId;
     @NotBlank(message = "can't be blank")
     @NotNull(message = "can't be null")

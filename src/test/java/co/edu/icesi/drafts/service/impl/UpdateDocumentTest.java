@@ -1,16 +1,23 @@
 package co.edu.icesi.drafts.service.impl;
 
+import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapperImpl;
+import co.edu.icesi.drafts.model.IcesiDocument;
+import co.edu.icesi.drafts.model.IcesiDocumentStatus;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
+import java.util.UUID;
 
 public class UpdateDocumentTest {
 
@@ -33,7 +40,26 @@ public class UpdateDocumentTest {
 
     @Test
     public void TestUpdate_WhenDocumentIsOnApprovedCantBeModified(){
-        //TODO implement test!
-        fail();
+        IcesiDocumentDTO doc = defaultDocumentDTO();
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> documentService.updateDocument(null, doc))
     }
+
+    private IcesiDocument defaultIcesiDocument() {
+        return IcesiDocument.builder()
+        .title("Dune")
+        .text("default text")
+        .status(IcesiDocumentStatus.APPROVED)
+        .userId(UUID.fromString("c0a80101-0000-0000-0000-000000000000"))
+        .build();
+    }
+
+    private IcesiDocumentDTO defaultDocumentDTO() {
+        return IcesiDocumentDTO.builder()
+        .title("Dune")
+        .text("default text")
+        .status(IcesiDocumentStatus.APPROVED)
+        .userId(UUID.fromString("c0a80101-0000-0000-0000-000000000000"))
+        .build();
+    }
+
 }
