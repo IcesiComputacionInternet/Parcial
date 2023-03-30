@@ -6,6 +6,7 @@ import co.edu.icesi.drafts.error.exception.*;
 import co.edu.icesi.drafts.error.util.IcesiExceptionBuilder;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
 import co.edu.icesi.drafts.model.IcesiDocument;
+import co.edu.icesi.drafts.model.IcesiDocumentStatus;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
 
@@ -50,7 +52,31 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
-        return null;
+        var document = documentRepository.findById(UUID.fromString(documentId))
+                .orElseThrow(
+                        createIcesiException(
+                                "Document not found",
+                                HttpStatus.NOT_FOUND,
+                                new DetailBuilder(ErrorCode.ERR_404, "Document", "Id", documentId)
+                        )
+                );
+        validateStatus(icesiDocumentDTO);
+        IcesiDocumentDTO updated = exchangeDocumentInfo(documentMapper.fromIcesiDocument(document), icesiDocumentDTO);
+        documentRepository.save(documentMapper.fromIcesiDocumentDTO(updated));
+        return updated;
+    }
+
+    public IcesiDocumentDTO exchangeDocumentInfo(IcesiDocumentDTO old, IcesiDocumentDTO newDoc){
+        old.setTitle(newDoc.getTitle());
+        old.setText(newDoc.getText());
+        old.setStatus(newDoc.getStatus());
+        return old;
+    }
+    public void validateStatus(IcesiDocumentDTO icesiDocumentDTO) {
+
+        if (icesiDocumentDTO.getStatus().equals(IcesiDocumentStatus.REVISION) || icesiDocumentDTO.getStatus().equals(IcesiDocumentStatus.APPROVED)){
+            throw new RuntimeException("Not updatable document");
+        }
     }
 
     @Override
