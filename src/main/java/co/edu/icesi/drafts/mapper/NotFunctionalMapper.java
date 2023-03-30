@@ -13,6 +13,17 @@ public class NotFunctionalMapper implements IcesiDocumentMapper{
 
     @Override
     public IcesiDocument fromIcesiDocumentDTO(IcesiDocumentDTO icesiDocumentDTO) {
-        return null;
+        if ( icesiDocumentDTO == null ) {
+            return null;
+        }
+
+        IcesiDocument.IcesiDocumentBuilder icesiDocument = IcesiDocument.builder();
+
+        icesiDocument.icesiDocumentId( icesiDocumentDTO.getIcesiDocumentId() );
+        icesiDocument.title( icesiDocumentDTO.getTitle() );
+        icesiDocument.text( icesiDocumentDTO.getText() );
+        icesiDocument.status( icesiDocumentDTO.getStatus() );
+
+        return icesiDocument.build();
     }
 }

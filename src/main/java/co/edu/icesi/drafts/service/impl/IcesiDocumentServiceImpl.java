@@ -13,9 +13,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
 
@@ -45,16 +43,31 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
-        return null;
+        List<IcesiDocument> documents = documentsDTO.stream().map(documentMapper::fromIcesiDocumentDTO).toList();
+        documentRepository.saveAll(documents);
+        return documentsDTO;
     }
 
     @Override
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
-        return null;
+        boolean isNotApproved = documentRepository.findById(UUID.fromString(documentId)).filter(document -> document.getStatus().toString().equals("APPROVED")).orElseThrow(
+        throw (Throwable) createIcesiException(
+                "field userId is required",
+                HttpStatus.NOT_FOUND,
+                new DetailBuilder(ErrorCode.ERR_404, "User", "Id", icesiDocumentDTO.getUserId())
+        )
     }
 
     @Override
     public IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO) {
+        if (icesiDocumentDTO.getUserId() == null) {
+            throw (Throwable) createIcesiException(
+                    "field userId is required",
+                    HttpStatus.NOT_FOUND,
+                    new DetailBuilder(ErrorCode.ERR_404, "User", "Id", icesiDocumentDTO.getUserId())
+            )
+        }
+
         var user = userRepository.findById(icesiDocumentDTO.getUserId())
                 .orElseThrow(
                         createIcesiException(
