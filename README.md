@@ -1,2 +1,2 @@
 # Parcial
-Repositorio del parcial.
+Respuestas parcial: https://rb.gy/uswy
