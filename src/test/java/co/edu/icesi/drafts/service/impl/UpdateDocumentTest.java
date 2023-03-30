@@ -12,12 +12,15 @@ import co.edu.icesi.drafts.service.IcesiDocumentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public class UpdateDocumentTest {
@@ -41,8 +44,23 @@ public class UpdateDocumentTest {
 
     @Test
     public void TestUpdate_WhenDocumentIsOnApprovedCantBeModified(){
-        IcesiDocumentDTO doc = defaultDocumentDTO();
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> documentService.updateDocument(null, doc))
+        IcesiDocumentDTO icesiDocumentDTO = defaultDocumentDTO();
+        icesiDocumentDTO.setTitle("Updated Title");
+        icesiDocumentDTO.setText("Updated Text");
+    
+        IcesiDocument doc = defaultIcesiDocument();
+        doc.setTitle("Original Title");
+        doc.setText("Original Text");
+    
+        when(documentRepository.findById("c0a80101-0000-0000-0000-000000000000")).thenReturn(Optional.of(doc));
+    
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            documentService.updateDocument("c0a80101-0000-0000-0000-000000000000", icesiDocumentDTO);
+        });
+    
+        assertEquals("This document cannot be updated", exception.getMessage());
+
     }
 
     private IcesiDocument defaultIcesiDocument() {
