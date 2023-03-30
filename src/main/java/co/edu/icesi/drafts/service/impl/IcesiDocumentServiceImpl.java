@@ -43,9 +43,12 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
+        IcesiError icesiError = IcesiError.builder()
+                .status(HttpStatus.BAD_REQUEST)
+                .build();
         List<IcesiDocument> documents = documentsDTO.stream()
-                .peek(this::validateUniqueDocumentTitle)
-                .peek(icesiDocumentDTO -> validateUserExists(icesiDocumentDTO.getUserId()))
+                .peek(icesiDocumentDTO ->  validateUniqueDocumentTitle(icesiDocumentDTO, icesiError))
+                .peek(icesiDocumentDTO -> validateUserExists(icesiDocumentDTO.getUserId(), icesiError))
                 .map(this::createDocument)
                 .map(documentMapper::fromIcesiDocumentDTO)
                 .toList();
@@ -54,16 +57,21 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                 .toList();
     }
 
-    private void validateUniqueDocumentTitle(IcesiDocumentDTO icesiDocumentDTO){
+    private void validateUniqueDocumentTitle(IcesiDocumentDTO icesiDocumentDTO, IcesiError icesiError){
         if(documentRepository.findByTitle(icesiDocumentDTO.getTitle()).isPresent()){
+            icesiError.getDetails().add(IcesiErrorDetail.builder()
+                    .errorCode()
+                    .errorMessage()
+                    .build());
             throw new IcesiException("Document title already exists"
                     , IcesiError.builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .build());
         }
     }
-    private void validateUserExists(UUID userId){
+    private void validateUserExists(UUID userId, IcesiError icesiError){
         if(userRepository.findById(userId).isEmpty()){
+
             throw new IcesiException("User not found"
                     , IcesiError.builder()
                     .status(HttpStatus.BAD_REQUEST)
@@ -77,6 +85,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
         IcesiDocument documentToUpdate = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
 
         validateDocumentState(icesiDocumentDTO);
+        validateUniqueDocumentTitle(icesiDocumentDTO);
 
         changeDocumentArguments(documentToUpdate, documentWithNewInfo);
 
@@ -115,6 +124,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                 .orElseThrow(
                         () -> new IcesiException("User not found", IcesiError.builder().status(HttpStatus.BAD_REQUEST).build())
                 );
+        validateDocumentState(icesiDocumentDTO);
         var icesiDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
         icesiDocument.setIcesiUser(user);
         return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocument));
