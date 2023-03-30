@@ -46,7 +46,7 @@ public class UpdateDocumentTest {
     public void TestUpdate_WhenDocumentIsOnApprovedCantBeModified(){
         IcesiDocumentDTO icesiDocumentDTO = defaultDocumentDTO();
         IcesiDocument doc = defaultIcesiDocument();
-        
+
         when(documentRepository.findById("c0a80101-0000-0000-0000-000000000000")).thenReturn(Optional.of(doc));
         
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
@@ -54,7 +54,29 @@ public class UpdateDocumentTest {
         });
     
         assertEquals("This document cannot be updated", exception.getMessage());
+    }
 
+    @Test 
+    public void testSuccesfullyUpdate() {
+
+    IcesiDocumentDTO inputDTO = defaultDocumentDTO();
+    inputDTO.setTitle("new title");
+    inputDTO.setText("new text");
+
+    IcesiDocument existingDocument = defaultIcesiDocument();
+    existingDocument.setStatus(IcesiDocumentStatus.DRAFT);
+
+    when(documentRepository.findById("c0a80101-0000-0000-0000-000000000000")).thenReturn(Optional.of(existingDocument));
+    when(documentMapper.fromIcesiDocument(any())).thenReturn(inputDTO);
+
+
+    IcesiDocumentDTO result = documentService.updateDocument("c0a80101-0000-0000-0000-000000000000", inputDTO);
+
+    
+    assertEquals("new title", existingDocument.getTitle());
+    assertEquals("new text", existingDocument.getText());
+    assertEquals("new title", result.getTitle());
+    assertEquals("new text", result.getText());
     }
 
     private IcesiDocument defaultIcesiDocument() {
