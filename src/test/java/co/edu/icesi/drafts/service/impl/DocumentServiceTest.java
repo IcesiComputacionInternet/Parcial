@@ -21,16 +21,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 public class DocumentServiceTest {
-
     private IcesiDocumentService documentService;
-
     private IcesiDocumentRepository documentRepository;
-
     private IcesiUserRepository userRepository;
-
     private IcesiDocumentMapper documentMapper;
-
-
     @BeforeEach
     public void init() {
         documentRepository = mock(IcesiDocumentRepository.class);
@@ -66,7 +60,7 @@ public class DocumentServiceTest {
         var user = defaultUser();
         when(userRepository.findById(any())).thenReturn(Optional.of(user));
         // Act
-        var exception = assertThrows(IcesiException.class, () -> documentService.createDocument(documentDTO), "No exception was thrown");
+        var exception = assertThrows(IcesiException.class, () -> documentService.createDocument(documentDTO));
 
         // Assert
         var error = exception.getError();
