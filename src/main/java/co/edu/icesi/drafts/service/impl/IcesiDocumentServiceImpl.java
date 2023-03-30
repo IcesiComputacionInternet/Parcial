@@ -44,29 +44,32 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
         List<IcesiDocument> documents = documentsDTO.stream().map(documentMapper::fromIcesiDocumentDTO).toList();
+        documents.stream().filter(document -> documentRepository.findByTitle(document.getTitle()).isEmpty()).toList();
         documentRepository.saveAll(documents);
         return documentsDTO;
     }
 
     @Override
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
-        boolean isNotApproved = documentRepository.findById(UUID.fromString(documentId)).filter(document -> document.getStatus().toString().equals("APPROVED")).orElseThrow(
-        throw (Throwable) createIcesiException(
+        IcesiDocument icesiDocument = documentRepository.findById(UUID.fromString(documentId)).filter(document -> document.getStatus().toString().equals("APPROVED")).orElseThrow(
+        createIcesiException(
                 "field userId is required",
                 HttpStatus.NOT_FOUND,
                 new DetailBuilder(ErrorCode.ERR_404, "User", "Id", icesiDocumentDTO.getUserId())
-        )
+        ));
+
+        return documentMapper.fromIcesiDocument(icesiDocument);
     }
 
     @Override
     public IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO) {
-        if (icesiDocumentDTO.getUserId() == null) {
+        /*if (icesiDocumentDTO.getUserId() == null) {
             throw (Throwable) createIcesiException(
                     "field userId is required",
                     HttpStatus.NOT_FOUND,
                     new DetailBuilder(ErrorCode.ERR_404, "User", "Id", icesiDocumentDTO.getUserId())
             )
-        }
+        }*/
 
         var user = userRepository.findById(icesiDocumentDTO.getUserId())
                 .orElseThrow(
