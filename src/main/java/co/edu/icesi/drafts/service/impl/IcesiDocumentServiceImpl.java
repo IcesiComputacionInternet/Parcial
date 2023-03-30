@@ -10,6 +10,7 @@ import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -19,8 +20,8 @@ import java.util.Objects;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
 
-
-@AllArgsConstructor
+@Service
+@RequiredArgsConstructor
 class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
 
@@ -29,11 +30,6 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     private final IcesiDocumentMapper documentMapper;
     private IcesiDocumentController documentController;
 
-    public IcesiDocumentServiceImpl(IcesiUserRepository userRepository, IcesiDocumentRepository documentRepository, IcesiDocumentMapper documentMapper) {
-        this.userRepository = userRepository;
-        this.documentRepository = documentRepository;
-        this.documentMapper = documentMapper;
-    }
 
     @Override
     public List<IcesiDocumentDTO> getAllDocuments() {
