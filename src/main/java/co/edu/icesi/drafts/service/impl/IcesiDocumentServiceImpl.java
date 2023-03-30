@@ -3,19 +3,20 @@ package co.edu.icesi.drafts.service.impl;
 import co.edu.icesi.drafts.controller.IcesiDocumentController;
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.error.exception.*;
-import co.edu.icesi.drafts.error.util.IcesiExceptionBuilder;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
-import co.edu.icesi.drafts.model.IcesiDocument;
+import co.edu.icesi.drafts.model.IcesiDocumentStatus;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
 
+import javax.swing.text.html.Option;
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
 
@@ -45,16 +46,36 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
-        return null;
+        List<IcesiDocumentDTO> documentDTOList =  new ArrayList<IcesiDocumentDTO>();
+        for (int i=0; i<documentsDTO.size();i++){
+            documentDTOList.add(createDocument(documentsDTO.get(i)));
+        }
+        return documentDTOList;
     }
 
     @Override
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
-        return null;
+        var document= documentRepository.findByTitle(icesiDocumentDTO.getTitle())
+                .orElseThrow(
+                        createIcesiException(
+                                "Document not found",
+                                HttpStatus.NOT_FOUND,
+                                new DetailBuilder(ErrorCode.ERR_404, "Title", "Id", icesiDocumentDTO.getTitle())
+                        )
+                );
+        if (document.getStatus()== IcesiDocumentStatus.DRAFT || document.getStatus()==IcesiDocumentStatus.REVISION){
+            throw new RuntimeException("The documents with type draft or revision can not be updated");
+        }
+        var icesiDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
+        icesiDocument.setText(icesiDocumentDTO.getText());
+        icesiDocument.setTitle(icesiDocumentDTO.getTitle());
+        icesiDocument.setStatus(icesiDocumentDTO.getStatus());
+        return  documentMapper.fromIcesiDocument(documentRepository.save(icesiDocument));
     }
 
     @Override
     public IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO) {
+       validateIcesiUserId(icesiDocumentDTO);
         var user = userRepository.findById(icesiDocumentDTO.getUserId())
                 .orElseThrow(
                         createIcesiException(
@@ -66,5 +87,15 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
         var icesiDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
         icesiDocument.setIcesiUser(user);
         return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocument));
+    }
+
+    private void validateIcesiUserId(IcesiDocumentDTO icesiDocumentDTO) {
+        Optional.of(icesiDocumentDTO.getUserId()).orElseThrow(
+                createIcesiException(
+                        "User not found",
+                        HttpStatus.NOT_FOUND,
+                        new DetailBuilder(ErrorCode.ERR_404, "User", "Id", icesiDocumentDTO.getUserId())
+                )
+        );
     }
 }
