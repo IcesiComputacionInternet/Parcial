@@ -228,6 +228,25 @@ public class DocumentServiceTest {
         );
     }
 
+    @Test
+    @DisplayName("Update document success")
+    public void updateDocument_HappyPath() {
+        // Arrange
+        var documentDTO = defaultDocumentDTO();
+        var user = defaultUser();
+        var document = defaultDocument();
+        when(userRepository.findById(any())).thenReturn(Optional.of(user));
+        when(documentRepository.findByTitle(any())).thenReturn(Optional.of(documentDTO));
+        // Act
+        documentService.updateDocument(documentDTO.getIcesiDocumentId().toString(),documentDTO);
+
+        // Assert
+        verify(documentRepository, times(1)).save(document);
+        verify(documentMapper, times(1)).fromIcesiDocument(any());
+        verify(documentMapper, times(1)).fromIcesiDocumentDTO(any());
+
+    }
+
     private List<IcesiDocument> defaultDocuments() {
         return List.of(
                 IcesiDocument.builder()

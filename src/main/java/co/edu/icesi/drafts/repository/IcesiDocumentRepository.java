@@ -11,5 +11,6 @@ import java.util.UUID;
 public interface IcesiDocumentRepository extends JpaRepository<IcesiDocument, UUID> {
 
     Optional<IcesiDocument> findByTitle(String title);
+    Optional<IcesiDocument> findById(String documentId);
 
 }
