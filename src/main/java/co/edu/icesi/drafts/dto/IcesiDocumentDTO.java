@@ -26,6 +26,7 @@ public class IcesiDocumentDTO {
     private String text;
     @NotNull(message = "can't be null")
     private IcesiDocumentStatus status;
+    @NotNull
     private UUID userId;
 
 }
