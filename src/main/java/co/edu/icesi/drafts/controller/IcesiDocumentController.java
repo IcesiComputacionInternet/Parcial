@@ -9,10 +9,13 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@AllArgsConstructor
 public class IcesiDocumentController implements IcesiDocumentAPI {
 
     private final IcesiDocumentService documentService;
+
+    public IcesiDocumentController(IcesiDocumentService documentService){
+        this.documentService=documentService;
+    }
 
     @Override
     public List<IcesiDocumentDTO> getAllDocuments() {
