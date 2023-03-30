@@ -45,16 +45,10 @@ public class UpdateDocumentTest {
     @Test
     public void TestUpdate_WhenDocumentIsOnApprovedCantBeModified(){
         IcesiDocumentDTO icesiDocumentDTO = defaultDocumentDTO();
-        icesiDocumentDTO.setTitle("Updated Title");
-        icesiDocumentDTO.setText("Updated Text");
-    
         IcesiDocument doc = defaultIcesiDocument();
-        doc.setTitle("Original Title");
-        doc.setText("Original Text");
-    
+        
         when(documentRepository.findById("c0a80101-0000-0000-0000-000000000000")).thenReturn(Optional.of(doc));
-    
-        // Act & Assert
+        
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             documentService.updateDocument("c0a80101-0000-0000-0000-000000000000", icesiDocumentDTO);
         });
