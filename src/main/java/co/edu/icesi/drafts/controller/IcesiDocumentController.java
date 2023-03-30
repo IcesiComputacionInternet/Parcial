@@ -2,7 +2,9 @@ package co.edu.icesi.drafts.controller;
 
 import co.edu.icesi.drafts.api.IcesiDocumentAPI;
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
+import co.edu.icesi.drafts.dto.UpdateDocumentDTO;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
+import co.edu.icesi.drafts.service.impl.IcesiDocumentServiceImpl;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,8 +31,9 @@ public class IcesiDocumentController implements IcesiDocumentAPI {
         return documentService.createDocuments(documentDTOS);
     }
 
+
     @Override
-    public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO documentDTO) {
-        return documentService.updateDocument(documentId, documentDTO);
+    public IcesiDocumentDTO updateDocument(UpdateDocumentDTO updateDocumentDTO) {
+        return documentService.updateDocument(updateDocumentDTO);
     }
 }
