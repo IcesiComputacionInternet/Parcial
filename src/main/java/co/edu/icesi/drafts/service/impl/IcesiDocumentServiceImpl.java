@@ -63,9 +63,9 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
             throw new RuntimeException("There are duplicated title within the list of documents to create");
         }
 
-        return documentMapper.fromIcesiDocumentList(documentsToSave.stream()
-            .map(documentMapper::fromIcesiDocumentDTO)
-            .collect(Collectors.toList()));
+        return documentMapper.fromIcesiDocumentList(documentRepository.saveAll(documentsToSave.stream()
+        .map(documentMapper::fromIcesiDocumentDTO)
+        .collect(Collectors.toList())));
     }
 
     @Override
