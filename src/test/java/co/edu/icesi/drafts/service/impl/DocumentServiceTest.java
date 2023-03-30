@@ -1,5 +1,6 @@
 package co.edu.icesi.drafts.service.impl;
 
+import co.edu.icesi.drafts.controller.IcesiDocumentController;
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.error.exception.IcesiErrorDetail;
 import co.edu.icesi.drafts.error.exception.IcesiException;
@@ -67,7 +68,6 @@ public class DocumentServiceTest {
         when(userRepository.findById(any())).thenReturn(Optional.of(user));
         // Act
         var exception = assertThrows(IcesiException.class, () -> documentService.createDocument(documentDTO), "No exception was thrown");
-
         // Assert
         var error = exception.getError();
         var details = error.getDetails();

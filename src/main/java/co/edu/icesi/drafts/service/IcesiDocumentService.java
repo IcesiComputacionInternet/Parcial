@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Service
+
 public interface IcesiDocumentService {
     List<IcesiDocumentDTO> getAllDocuments();
 
@@ -13,5 +13,5 @@ public interface IcesiDocumentService {
 
     IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO);
 
-    IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO);
+    IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO);;
 }
