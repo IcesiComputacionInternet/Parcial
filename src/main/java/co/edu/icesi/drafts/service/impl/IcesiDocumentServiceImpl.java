@@ -6,6 +6,7 @@ import co.edu.icesi.drafts.error.exception.*;
 import co.edu.icesi.drafts.error.util.IcesiExceptionBuilder;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
 import co.edu.icesi.drafts.model.IcesiDocument;
+import co.edu.icesi.drafts.model.IcesiUser;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
@@ -13,9 +14,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
 
@@ -45,7 +44,33 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
-        return null;
+        boolean areTitlesInUse = findRepeatTitle(documentsDTO);
+
+        if(areTitlesInUse){
+            throw new RuntimeException("There are some title that are in use");
+        }
+
+        List<IcesiDocument> icesiDocuments = documentsDTO
+                .stream()
+                .map(documentMapper::fromIcesiDocumentDTO)
+                .map(documentRepository::save)
+                .toList();
+        icesiDocuments.forEach(document -> document.setIcesiUser(findUser(document.getIcesiDocumentId())));
+        icesiDocuments.forEach(documentRepository::save);
+        return icesiDocuments.stream().map(documentMapper::fromIcesiDocument).toList();
+    }
+
+    private boolean findRepeatTitle(List<IcesiDocumentDTO> documentDTOS){
+        Optional<IcesiDocumentDTO> icesiDocuments = documentDTOS
+                .stream()
+                .filter(document -> documentRepository.findByTitle(document.getTitle())
+                        .isPresent())
+                .findAny();
+        return icesiDocuments.isPresent();
+    }
+
+    private IcesiUser findUser(UUID userId){
+        return userRepository.findById(userId).orElseThrow(() -> new RuntimeException("There are some users that doesn't exists"));
     }
 
     @Override
