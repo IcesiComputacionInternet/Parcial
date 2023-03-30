@@ -27,8 +27,13 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     private final IcesiUserRepository userRepository;
     private final IcesiDocumentRepository documentRepository;
     private final IcesiDocumentMapper documentMapper;
+    private IcesiDocumentController documentController;
 
-    private final IcesiDocumentController documentController;
+    public IcesiDocumentServiceImpl(IcesiUserRepository userRepository, IcesiDocumentRepository documentRepository, IcesiDocumentMapper documentMapper) {
+        this.userRepository = userRepository;
+        this.documentRepository = documentRepository;
+        this.documentMapper = documentMapper;
+    }
 
     @Override
     public List<IcesiDocumentDTO> getAllDocuments() {
