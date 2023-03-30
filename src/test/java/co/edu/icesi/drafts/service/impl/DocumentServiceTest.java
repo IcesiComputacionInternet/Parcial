@@ -74,7 +74,6 @@ public class DocumentServiceTest {
     @Test
     @DisplayName("When title in DTO already exits method throws an error")
     public void createDocument_WhenTitleIsNotUnique_ShouldThrowException() {
-
         // Arrange
         var documentDTO = defaultDocumentDTO();
         var document = defaultDocument();
@@ -104,13 +103,13 @@ public class DocumentServiceTest {
 
         when(userRepository.findById(any())).thenReturn(Optional.of(user));
         when(documentRepository.findByTitle(any())).thenReturn(Optional.empty());
+        when(documentRepository.saveAll(anyCollection())).thenReturn(defaultDocuments());
 
         documentService.createDocuments(documentsDTO);
 
         verify(documentRepository, times(1)).saveAll(documents);
         verify(documentMapper, times(2)).fromIcesiDocumentDTO(any());
         verify(documentMapper, times(2)).fromIcesiDocument(any());
-
     }
 
     @Test
