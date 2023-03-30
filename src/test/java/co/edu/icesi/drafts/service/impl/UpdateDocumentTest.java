@@ -79,6 +79,17 @@ public class UpdateDocumentTest {
     assertEquals("new text", result.getText());
     }
 
+    @Test
+    public void testDesntExists() {
+        IcesiDocumentDTO icesiDocumentDTO = defaultDocumentDTO();
+
+        when(documentRepository.findById("c0a80101-0000-0000-0000-000000000000")).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> {
+            documentService.updateDocument("c0a80101-0000-0000-0000-000000000000", icesiDocumentDTO);
+        }, "This document does not exists");
+    }
+
     private IcesiDocument defaultIcesiDocument() {
         return IcesiDocument.builder()
         .title("Dune")
