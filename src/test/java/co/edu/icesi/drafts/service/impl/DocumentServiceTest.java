@@ -34,7 +34,7 @@ public class DocumentServiceTest {
     @BeforeEach
     public void init() {
         documentRepository = mock(IcesiDocumentRepository.class);
-        documentMapper = spy(IcesiDocumentMapperImpl.class);
+        documentMapper = spy(IcesiDocumentMapper.class);
         userRepository = mock(IcesiUserRepository.class);
         documentService = new IcesiDocumentServiceImpl(userRepository, documentRepository, documentMapper);
     }

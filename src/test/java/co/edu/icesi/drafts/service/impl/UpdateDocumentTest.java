@@ -1,5 +1,6 @@
 package co.edu.icesi.drafts.service.impl;
 
+import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapperImpl;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
@@ -7,6 +8,8 @@ import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
@@ -26,14 +29,14 @@ public class UpdateDocumentTest {
     @BeforeEach
     public void init() {
         documentRepository = mock(IcesiDocumentRepository.class);
-        documentMapper = spy(IcesiDocumentMapperImpl.class);
+        documentMapper = spy(IcesiDocumentMapper.class);
         userRepository = mock(IcesiUserRepository.class);
         documentService = new IcesiDocumentServiceImpl(userRepository, documentRepository, documentMapper);
     }
 
     @Test
     public void TestUpdate_WhenDocumentIsOnApprovedCantBeModified(){
-        //TODO implement test!
+        
         fail();
     }
 }
