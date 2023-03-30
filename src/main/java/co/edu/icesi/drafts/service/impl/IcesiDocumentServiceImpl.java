@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
 
@@ -50,6 +51,16 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
+        var document = documentRepository.findById(UUID.fromString(documentId)).orElseThrow(
+                createIcesiException(
+                        "Document not found",
+                        HttpStatus.NOT_FOUND,
+                        new DetailBuilder(ErrorCode.ERR_404,  "Id", icesiDocumentDTO.getUserId())
+                )
+        );
+
+
+
         return null;
     }
 
