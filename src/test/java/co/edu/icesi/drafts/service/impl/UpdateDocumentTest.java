@@ -1,7 +1,6 @@
 package co.edu.icesi.drafts.service.impl;
 
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
-import co.edu.icesi.drafts.mapper.IcesiDocumentMapperImpl;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
@@ -26,7 +25,7 @@ public class UpdateDocumentTest {
     @BeforeEach
     public void init() {
         documentRepository = mock(IcesiDocumentRepository.class);
-        documentMapper = spy(IcesiDocumentMapperImpl.class);
+        documentMapper = spy(IcesiDocumentMapper.class);
         userRepository = mock(IcesiUserRepository.class);
         documentService = new IcesiDocumentServiceImpl(userRepository, documentRepository, documentMapper);
     }
@@ -34,6 +33,8 @@ public class UpdateDocumentTest {
     @Test
     public void TestUpdate_WhenDocumentIsOnApprovedCantBeModified(){
         //TODO implement test!
+        //kill me now pls
+
         fail();
     }
 }

@@ -6,6 +6,8 @@ import co.edu.icesi.drafts.error.exception.*;
 import co.edu.icesi.drafts.error.util.IcesiExceptionBuilder;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
 import co.edu.icesi.drafts.model.IcesiDocument;
+import co.edu.icesi.drafts.model.IcesiDocumentStatus;
+import co.edu.icesi.drafts.model.IcesiUser;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
@@ -14,9 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
 
@@ -46,12 +46,27 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
+
+        Optional<IcesiDocument> icesiDocument = documentRepository.findById(UUID.fromString(documentId));
+        if(icesiDocument.isPresent()){
+            if(icesiDocumentDTO.getStatus()== IcesiDocumentStatus.APPROVED){
+                throw new RuntimeException("Status approved. Can´t update");
+               // throw new IcesiException("ERROR", new IcesiError(HttpStatus.BAD_REQUEST, new IcesiErrorDetail("CODE-01", "AYUDA")));
+            }else{
+                IcesiDocument icesiDocumentNew = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
+                return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocumentNew));
+            }
+        }
+        //
+        // Optional<IcesiDocument> icesiDocument = documentRepository.findById(UUID.fromString(documentId));
+
         return null;
     }
 
     @Override
     public IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO) {
-        var user = userRepository.findById(icesiDocumentDTO.getUserId())
+
+        IcesiUser user = userRepository.findById(icesiDocumentDTO.getUserId())
                 .orElseThrow(
                         createIcesiException(
                                 "User not found",
