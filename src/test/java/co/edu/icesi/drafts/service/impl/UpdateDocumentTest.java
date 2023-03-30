@@ -5,6 +5,7 @@ import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapperImpl;
 import co.edu.icesi.drafts.model.IcesiDocument;
 import co.edu.icesi.drafts.model.IcesiDocumentStatus;
+import co.edu.icesi.drafts.model.IcesiUser;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
@@ -49,7 +50,7 @@ public class UpdateDocumentTest {
         .title("Dune")
         .text("default text")
         .status(IcesiDocumentStatus.APPROVED)
-        .userId(UUID.fromString("c0a80101-0000-0000-0000-000000000000"))
+        .icesiUser(defaultUser())
         .build();
     }
 
@@ -59,6 +60,16 @@ public class UpdateDocumentTest {
         .text("default text")
         .status(IcesiDocumentStatus.APPROVED)
         .userId(UUID.fromString("c0a80101-0000-0000-0000-000000000000"))
+        .build();
+    }
+
+    private IcesiUser defaultUser() {
+        return IcesiUser.builder()
+        .firstName("John")
+        .lastName("Doe")
+        .code("123")
+        .email("example@gmail")
+        .phoneNumber("9999-9999")
         .build();
     }
 

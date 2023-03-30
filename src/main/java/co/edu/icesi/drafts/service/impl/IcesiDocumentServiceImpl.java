@@ -14,10 +14,13 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.lang.StackWalker.Option;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.swing.text.Document;
 
@@ -48,7 +51,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
-        /*List<IcesiDocumentDTO> documentsToSave = new ArrayList<>();
+        List<IcesiDocumentDTO> documentsToSave = new ArrayList<>();
         if(documentsDTO.size() == documentsDTO.stream().distinct().count()) {//This validates if exists repeated title within the list of documents
             for (IcesiDocumentDTO document : documentsDTO) {
                 IcesiUser user =   userRepository.findById(document.getUserId()).orElseThrow(() -> new RuntimeException("User " + document.getUserId() + " does not exists"));
@@ -59,8 +62,10 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
         else {
             throw new RuntimeException("There are duplicated title within the list of documents to create");
         }
-        return documentMapper.fromIcesiDocumentDTO();*/
-        return null;
+
+        return documentMapper.fromIcesiDocumentList(documentsToSave.stream()
+            .map(documentMapper::fromIcesiDocumentDTO)
+            .collect(Collectors.toList()));
     }
 
     @Override
@@ -78,6 +83,23 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO) {
+        Optional.ofNullable(icesiDocumentDTO.getUserId())
+            .orElseThrow(
+                createIcesiException(
+                    "field userId is required",
+                    HttpStatus.NOT_FOUND,
+                    new DetailBuilder(ErrorCode.ERR_REQUIRED_FIELD, "userId", icesiDocumentDTO.getUserId())
+            )
+            );
+        documentRepository.findByTitle(icesiDocumentDTO.getTitle()).ifPresent(
+            e -> {
+                throw createIcesiException(
+                    "resource Document with field Title: Some title, already exists",
+                    HttpStatus.NOT_FOUND,
+                    new DetailBuilder(ErrorCode.ERR_DUPLICATED, "Document", "Title", icesiDocumentDTO.getTitle())
+                ).get();
+        }); 
+        
         var user = userRepository.findById(icesiDocumentDTO.getUserId())
                 .orElseThrow(
                         createIcesiException(
@@ -86,6 +108,8 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                                 new DetailBuilder(ErrorCode.ERR_404, "User", "Id", icesiDocumentDTO.getUserId())
                         )
                 );
+            
+        
         var icesiDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
         icesiDocument.setIcesiUser(user);
         return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocument));

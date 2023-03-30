@@ -70,6 +70,7 @@ public class DocumentServiceTest {
 
         // Assert
         var error = exception.getError();
+        System.out.println(error.toString());
         var details = error.getDetails();
         assertEquals(1, details.size());
         var detail = details.get(0);
