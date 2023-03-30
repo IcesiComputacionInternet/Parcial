@@ -74,7 +74,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                                 new DetailBuilder(ErrorCode.ERR_404, "User", "Id", icesiDocumentDTO.getUserId())
                         )
                 );
-        var icesiDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
+        IcesiDocument icesiDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
         icesiDocument.setIcesiUser(user);
         return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocument));
     }
