@@ -3,30 +3,26 @@ package co.edu.icesi.drafts.service.impl;
 import co.edu.icesi.drafts.controller.IcesiDocumentController;
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.error.exception.*;
-import co.edu.icesi.drafts.error.util.IcesiExceptionBuilder;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
-import co.edu.icesi.drafts.model.IcesiDocument;
+import co.edu.icesi.drafts.model.IcesiDocumentStatus;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
-
 
 @AllArgsConstructor
 class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
-
     private final IcesiUserRepository userRepository;
     private final IcesiDocumentRepository documentRepository;
     private final IcesiDocumentMapper documentMapper;
+
     private IcesiDocumentController documentController;
 
     public IcesiDocumentServiceImpl(IcesiUserRepository userRepository, IcesiDocumentRepository documentRepository, IcesiDocumentMapper documentMapper) {
@@ -50,7 +46,52 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
-        return null;
+
+        var document = documentRepository.findByTitle(documentId).orElseThrow(() -> new RuntimeException("Document not found"));
+
+        IcesiDocumentDTO documentDTO = documentMapper.fromIcesiDocument(document);
+
+        validateUserUpdate(documentDTO, icesiDocumentDTO);
+
+        validateStatus(documentDTO);
+
+        return modifyDocument(documentDTO, icesiDocumentDTO);
+    }
+
+    private void validateUserUpdate(IcesiDocumentDTO document, IcesiDocumentDTO icesiDocumentDTO){
+        if (document.getUserId() != icesiDocumentDTO.getUserId()){
+            throw new RuntimeException("Can't update user");
+        }
+    }
+
+    public IcesiDocumentDTO modifyDocument(IcesiDocumentDTO originalDocument, IcesiDocumentDTO newDocument){
+
+        originalDocument.setText(newDocument.getText());
+
+        verifyTitle(newDocument.getTitle());
+        originalDocument.setTitle(newDocument.getTitle());
+
+        validateStatusForChangeStatus(originalDocument, newDocument);
+
+        originalDocument.setStatus(newDocument.getStatus());
+
+        return originalDocument;
+    }
+
+    private void validateStatus(IcesiDocumentDTO document){
+        if(document.getStatus() != IcesiDocumentStatus.DRAFT && document.getStatus() != IcesiDocumentStatus.REVISION){
+            throw new RuntimeException("Title and/or text can't be modified");
+        }
+    }
+
+    private void validateStatusForChangeStatus(IcesiDocumentDTO originalDocument, IcesiDocumentDTO newDocument){
+        if (originalDocument.getStatus() != newDocument.getStatus() && originalDocument.getStatus() != IcesiDocumentStatus.REVISION){
+            throw new RuntimeException("Status can't be modified");
+        }
+    }
+
+    private void verifyTitle(String title){
+        documentRepository.findByTitle(title).orElseThrow(() -> new RuntimeException("Document with this title already exists"));
     }
 
     @Override
