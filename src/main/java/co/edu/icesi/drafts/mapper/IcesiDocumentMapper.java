@@ -10,5 +10,4 @@ public interface IcesiDocumentMapper {
     IcesiDocumentDTO fromIcesiDocument(IcesiDocument icesiDocument);
 
     IcesiDocument fromIcesiDocumentDTO(IcesiDocumentDTO icesiDocumentDTO);
-
 }

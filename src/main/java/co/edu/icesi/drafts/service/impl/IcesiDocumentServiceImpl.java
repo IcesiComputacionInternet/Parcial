@@ -6,6 +6,7 @@ import co.edu.icesi.drafts.error.exception.*;
 import co.edu.icesi.drafts.error.util.IcesiExceptionBuilder;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
 import co.edu.icesi.drafts.model.IcesiDocument;
+import co.edu.icesi.drafts.model.IcesiDocumentStatus;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
 
@@ -42,6 +44,19 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                 .toList();
     }
 
+    //Get a document by id
+    private IcesiDocumentDTO getDocumentById(String documentId) {
+        return documentRepository.findById(UUID.fromString(documentId))
+                .map(documentMapper::fromIcesiDocument)
+                .orElseThrow(
+                        createIcesiException(
+                                "Document not found",
+                                HttpStatus.NOT_FOUND,
+                                new DetailBuilder(ErrorCode.ERR_404, "Document", "Id", documentId)
+                        )
+                );
+    }
+
 
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
@@ -50,7 +65,53 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
-        return null;
+        validateDocumentStatus(documentId);
+        var document = documentRepository.findById(UUID.fromString(documentId))
+                .orElseThrow(
+                        createIcesiException(
+                                "Document not found",
+                                HttpStatus.NOT_FOUND,
+                                new DetailBuilder(ErrorCode.ERR_404, "Document", "Id", documentId)
+                        )
+                );
+        validateDocumentUser(UUID.fromString(documentId), icesiDocumentDTO.getUserId());
+        validateDocumentTitle(icesiDocumentDTO.getTitle());
+        IcesiDocument updatedDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
+        return documentMapper.fromIcesiDocument(documentRepository.save(updatedDocument));
+    }
+
+    //Validate if the document is on approved status
+    private void validateDocumentStatus(String actualDocumentId) {
+        IcesiDocumentDTO actualDocument = getDocumentById(actualDocumentId);
+        if (Objects.equals(actualDocument.getStatus(), IcesiDocumentStatus.APPROVED)) {
+            throw createIcesiException(
+                    "Document is on approved status",
+                    HttpStatus.BAD_REQUEST,
+                    new DetailBuilder(ErrorCode.ERR_400, "Document", "Status", actualDocument.getStatus())
+            ).get();
+        }
+    }
+
+    //Validate if you are trying to change the user of the document
+    private void validateDocumentUser(UUID actualDocumentId, UUID newUserId) {
+        if (!Objects.equals(actualDocumentId, newUserId)) {
+            throw createIcesiException(
+                    "You are trying to change the user of the document",
+                    HttpStatus.BAD_REQUEST,
+                    new DetailBuilder(ErrorCode.ERR_400, "Document", "User", newUserId)
+            ).get();
+        }
+    }
+
+    //Validate the title of the document, it must be unique
+    private void validateDocumentTitle(String title) {
+        if (documentRepository.findByTitle(title).isPresent()) {
+            throw createIcesiException(
+                    "Document title already exists",
+                    HttpStatus.BAD_REQUEST,
+                    new DetailBuilder(ErrorCode.ERR_400, "Document", "Title", title)
+            ).get();
+        }
     }
 
     @Override
