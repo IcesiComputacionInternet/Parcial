@@ -58,6 +58,24 @@ public class DocumentServiceTest {
     }
 
     @Test
+    @DisplayName("When user does not exist")
+    public void createDocument_WhenUserDoesNotExist() {
+        // Arrange
+        var documentDTO = defaultDocumentDTO();
+        when(userRepository.findById(any())).thenReturn(Optional.ofNullable(null));
+        // Act
+        var exception = assertThrows(IcesiException.class, () -> documentService.createDocument(documentDTO), "No exception was thrown");
+
+        // Assert
+        var error = exception.getError();
+        var details = error.getDetails();
+        assertEquals(1, details.size());
+        var detail = details.get(0);
+        assertEquals("ERR_404", detail.getErrorCode(), "Code doesn't match");
+        assertEquals("User with Id: "+documentDTO.getUserId()+" not found", detail.getErrorMessage(), "Error message doesn't match");
+    }
+
+    @Test
     @DisplayName("When userId in DTO is null method throws an error")
     public void createDocument_WhenUserIdInDTOIsNull_ShouldThrowException() {
         // Arrange
