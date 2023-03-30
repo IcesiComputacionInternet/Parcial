@@ -1,11 +1,8 @@
 package co.edu.icesi.drafts.service.impl;
 
-import co.edu.icesi.drafts.controller.IcesiDocumentController;
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.error.exception.*;
-import co.edu.icesi.drafts.error.util.IcesiExceptionBuilder;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
-import co.edu.icesi.drafts.model.IcesiDocument;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
@@ -13,27 +10,21 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Supplier;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
 
 
+@Service
 @AllArgsConstructor
-class IcesiDocumentServiceImpl implements IcesiDocumentService {
+public class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
 
     private final IcesiUserRepository userRepository;
     private final IcesiDocumentRepository documentRepository;
     private final IcesiDocumentMapper documentMapper;
-    private IcesiDocumentController documentController;
 
-    public IcesiDocumentServiceImpl(IcesiUserRepository userRepository, IcesiDocumentRepository documentRepository, IcesiDocumentMapper documentMapper) {
-        this.userRepository = userRepository;
-        this.documentRepository = documentRepository;
-        this.documentMapper = documentMapper;
-    }
 
     @Override
     public List<IcesiDocumentDTO> getAllDocuments() {
@@ -50,11 +41,27 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
+        documentRepository.getTypeofDocument(documentId)
+                .orElseThrow(()-> new RuntimeException("Invalid Type of Document"));
         return null;
     }
 
     @Override
     public IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO) {
+
+        UUID userId = Optional.ofNullable(icesiDocumentDTO.getUserId()).orElseThrow(
+                createIcesiException(
+                        "User Id is required",
+                        HttpStatus.BAD_REQUEST,
+                        new DetailBuilder(ErrorCode.ERR_REQUIRED_FIELD, "userId")
+                )
+        );
+
+
+
+
+
+
         var user = userRepository.findById(icesiDocumentDTO.getUserId())
                 .orElseThrow(
                         createIcesiException(

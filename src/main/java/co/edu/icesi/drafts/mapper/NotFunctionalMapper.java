@@ -2,9 +2,11 @@ package co.edu.icesi.drafts.mapper;
 
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.model.IcesiDocument;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 @Component
+@Primary
 public class NotFunctionalMapper implements IcesiDocumentMapper{
     @Override
     public IcesiDocumentDTO fromIcesiDocument(IcesiDocument icesiDocument) {
