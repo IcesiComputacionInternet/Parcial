@@ -10,8 +10,7 @@ public class UpdateDocumentDTO {
     private String ID;
     private String title;
     private String text;
-    private String status;
-    private String user;
+    private IcesiDocumentStatus status;
 
 
 }
