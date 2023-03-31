@@ -4,7 +4,7 @@ import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.model.IcesiDocument;
 import org.springframework.stereotype.Component;
 
-@Component
+
 public class NotFunctionalMapper implements IcesiDocumentMapper{
     @Override
     public IcesiDocumentDTO fromIcesiDocument(IcesiDocument icesiDocument) {
