@@ -8,6 +8,7 @@ import co.edu.icesi.drafts.error.util.IcesiExceptionBuilder;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
 import co.edu.icesi.drafts.model.IcesiDocument;
 import co.edu.icesi.drafts.model.IcesiDocumentStatus;
+import co.edu.icesi.drafts.model.IcesiUser;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
@@ -45,9 +46,19 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
+        List<IcesiDocument> icesiDocuments = documentsDTO.stream()
+                .map(documentDTO -> {
+                    IcesiDocument document  = documentMapper.fromIcesiDocumentDTO(documentDTO);
+                    document.setIcesiUser(findById(documentDTO.getUserId()));
+                    return document;
+                })
+                .toList();
 
-        //List<IcesiErrorDetail> errors = documentsDTO.stream(()->).toList();
-        return null;
+        documentRepository.saveAll(icesiDocuments);
+
+        return icesiDocuments.stream()
+                .map(documentMapper::fromIcesiDocument)
+                .toList();
     }
 
     @Override
@@ -86,7 +97,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
             throw createIcesiException(
                     "Title must be unique",
                     HttpStatus.NOT_ACCEPTABLE,
-                    new DetailBuilder(ErrorCode.ERR_404, "Document", "Id", icesiDocumentDTO.getIcesiDocumentId())
+                    new DetailBuilder(ErrorCode.ERR_DUPLICATED, "Document", "Title", icesiDocumentDTO.getTitle())
             ).get();
         }
     }
@@ -94,14 +105,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     @Override
     public IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO) {
         validateTitle(icesiDocumentDTO);
-
-        IcesiDocumentDTO opDto = Optional.of(icesiDocumentDTO).orElseThrow(
-                createIcesiException(
-                        "IcesiDocumentDTO null",
-                        HttpStatus.NOT_FOUND,
-                        new DetailBuilder(ErrorCode.ERR_404, "DTO", "null", icesiDocumentDTO.getUserId())
-                )
-        );
+        validateIcesiUserIdDtoIsNull(icesiDocumentDTO);
 
         var user = userRepository.findById(icesiDocumentDTO.getUserId())
                 .orElseThrow(
@@ -115,5 +119,26 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
         var icesiDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
         icesiDocument.setIcesiUser(user);
         return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocument));
+    }
+
+    private IcesiUser findById(UUID id){
+        return userRepository.findById(id)
+                .orElseThrow(
+                        createIcesiException(
+                                "User not found",
+                                HttpStatus.NOT_FOUND,
+                                new DetailBuilder(ErrorCode.ERR_404, "User", "Id", id)
+                        )
+                );
+    }
+
+    private void validateIcesiUserIdDtoIsNull(IcesiDocumentDTO icesiDocumentDTO){
+        if(icesiDocumentDTO.getUserId() == null){
+            throw createIcesiException(
+                    "User not found",
+                    HttpStatus.NOT_FOUND,
+                    new DetailBuilder(ErrorCode.ERR_REQUIRED_FIELD, "userId", "Id", icesiDocumentDTO.getUserId())
+            ).get();
+        }
     }
 }
