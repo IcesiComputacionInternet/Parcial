@@ -48,6 +48,7 @@ public class DocumentServiceTest {
         var document = defaultDocument();
         when(userRepository.findById(any())).thenReturn(Optional.of(user));
         when(documentRepository.findByTitle(any())).thenReturn(Optional.empty());
+        when(documentRepository.saveAll(any())).thenReturn(defaultDocuments());
         // Act
         documentService.createDocument(documentDTO);
 
