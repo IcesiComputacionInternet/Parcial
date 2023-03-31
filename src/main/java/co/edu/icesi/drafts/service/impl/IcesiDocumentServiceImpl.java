@@ -77,7 +77,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                         createIcesiException(
                                 "Document not found",
                                 HttpStatus.NOT_FOUND,
-                                new DetailBuilder(ErrorCode.ERR_404, "Document", "Id", documentId)
+                                new DetailBuilder(ErrorCode.ERR_404, "documentId", documentId)
                         )
                 );
         validateStatus(icesiDocumentDTO);
@@ -134,13 +134,6 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO) {
-
-       /* Optional.ofNullable(icesiDocumentDTO.getTitle()).orElseThrow(
-                createIcesiException(
-                        "Title is required" ,
-                        HttpStatus.NOT_FOUND,
-                        new DetailBuilder(ErrorCode.ERR_REQUIRED_FIELD, "Title")
-                ));*/
 
         validateTitle(icesiDocumentDTO);
         validateUserIdField(icesiDocumentDTO);
