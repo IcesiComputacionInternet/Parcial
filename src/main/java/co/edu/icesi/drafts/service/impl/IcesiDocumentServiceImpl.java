@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
 
@@ -45,42 +44,15 @@ public class IcesiDocumentServiceImpl implements IcesiDocumentService {
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
 
-        List<IcesiErrorDetail> errors = new ArrayList<>(documentsDTO.stream()
-                .filter(documentDTO -> documentRepository.findByTitle(documentDTO.getTitle()).isPresent())
-                .map(documentDTO -> new IcesiErrorDetail(
-                        "ERR_DUPLICATED",
-                        "resource Document with field Title: %s, already exists".formatted(documentDTO.getTitle())
-                ))
-                .toList());
-
-        errors.addAll(documentsDTO.stream()
-                .filter(documentDTO -> userRepository.findById(documentDTO.getUserId()).isEmpty())
-                .map(documentDTO -> new IcesiErrorDetail(
-                        "ERR_404",
-                        "User with Id: %s not found".formatted(documentDTO.getUserId())
-                ))
-                .toList());
-
-        if (!errors.isEmpty()) {
-            throw new IcesiException(
-                    "Errores al añadir",
-                    IcesiError.builder()
-                        .status(HttpStatus.BAD_REQUEST)
-                        .details(errors)
-                        .build()
-            );
-        }
+        validateListDocuments(documentsDTO);
 
         List<IcesiDocument> icesiDocuments = documentsDTO.stream()
-                .collect(
-                        ArrayList::new,
-                        (l, d) -> {
-                            IcesiDocument document = documentMapper.fromIcesiDocumentDTO(d);
-                            document.setIcesiUser(getUserById(d.getUserId()));
-                            l.add(document);
-                        },
-                        ArrayList::addAll
-                );
+                .map(document -> {
+                    IcesiDocument aux = documentMapper.fromIcesiDocumentDTO(document);
+                    aux.setIcesiUser(getUserById(document.getUserId()));
+                    return aux;
+                })
+                .toList();
 
         documentRepository.saveAll(icesiDocuments);
 
@@ -106,15 +78,6 @@ public class IcesiDocumentServiceImpl implements IcesiDocumentService {
         document.setText(icesiDocumentDTO.getText());
         document.setStatus(icesiDocumentDTO.getStatus());
         return documentMapper.fromIcesiDocument(documentRepository.save(document));
-    }
-
-    private void validateStatusDocument(IcesiDocumentDTO icesiDocumentDTO){
-        if (icesiDocumentDTO.getStatus() == IcesiDocumentStatus.APPROVED) {
-            throw createIcesiException(
-                    "The status of the document is not valid to update",
-                    HttpStatus.BAD_REQUEST,
-                    new DetailBuilder(ErrorCode.ERR_500)).get();
-        }
     }
 
     @Override
@@ -156,6 +119,43 @@ public class IcesiDocumentServiceImpl implements IcesiDocumentService {
                                 new DetailBuilder(ErrorCode.ERR_REQUIRED_FIELD, "userId", "Id", userId)
                         )
                 );
+    }
+
+    private void validateStatusDocument(IcesiDocumentDTO icesiDocumentDTO){
+        if (icesiDocumentDTO.getStatus() == IcesiDocumentStatus.APPROVED) {
+            throw createIcesiException(
+                    "The status of the document is not valid to update",
+                    HttpStatus.BAD_REQUEST,
+                    new DetailBuilder(ErrorCode.ERR_500)).get();
+        }
+    }
+
+    private void validateListDocuments(List<IcesiDocumentDTO> documentsDTO){
+        List<IcesiErrorDetail> errors = new ArrayList<>(documentsDTO.stream()
+                .filter(documentDTO -> documentRepository.findByTitle(documentDTO.getTitle()).isPresent())
+                .map(documentDTO -> new IcesiErrorDetail(
+                        "ERR_DUPLICATED",
+                        "resource Document with field Title: %s, already exists".formatted(documentDTO.getTitle())
+                ))
+                .toList());
+
+        errors.addAll(documentsDTO.stream()
+                .filter(documentDTO -> userRepository.findById(documentDTO.getUserId()).isEmpty())
+                .map(documentDTO -> new IcesiErrorDetail(
+                        "ERR_404",
+                        "User with Id: %s not found".formatted(documentDTO.getUserId())
+                ))
+                .toList());
+
+        if (!errors.isEmpty()) {
+            throw new IcesiException(
+                    "Errores al añadir",
+                    IcesiError.builder()
+                            .status(HttpStatus.BAD_REQUEST)
+                            .details(errors)
+                            .build()
+            );
+        }
     }
 
 }
