@@ -127,6 +127,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     @Override
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
         validateDocumentStatus(documentId);
+        validateDocumentTitle(icesiDocumentDTO.getTitle());
         var document = documentRepository.findById(UUID.fromString(documentId))
                 .orElseThrow(
                         createIcesiException(
@@ -135,10 +136,11 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                                 new DetailBuilder(ErrorCode.ERR_404, "Document", "Id", documentId)
                         )
                 );
-        validateDocumentUser(document.getIcesiDocumentId(), icesiDocumentDTO.getUserId());
-        validateDocumentTitle(icesiDocumentDTO.getTitle());
-        var updatedDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
-        return documentMapper.fromIcesiDocument(documentRepository.save(updatedDocument));
+        validateDocumentUser(document.getIcesiUser().getIcesiUserId(), icesiDocumentDTO.getUserId());
+        document.setTitle(icesiDocumentDTO.getTitle());
+        document.setText(icesiDocumentDTO.getText());
+        document.setStatus(icesiDocumentDTO.getStatus());
+        return documentMapper.fromIcesiDocument(documentRepository.save(document));
     }
 
     //Validate if the document is on approved status
@@ -146,10 +148,9 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
         IcesiDocumentDTO actualDocument = getDocumentById(actualDocumentId);
         if (Objects.equals(actualDocument.getStatus(), IcesiDocumentStatus.APPROVED)) {
             throw createIcesiException(
-                    "Document is on approved status",
+                    "The document is currently approved, it cannot be updated",
                     HttpStatus.BAD_REQUEST,
-                    new DetailBuilder(ErrorCode.ERR_400, "Document", "Status", actualDocument.getStatus())
-            ).get();
+                    new DetailBuilder(ErrorCode.ERR_500)).get();
         }
     }
 
