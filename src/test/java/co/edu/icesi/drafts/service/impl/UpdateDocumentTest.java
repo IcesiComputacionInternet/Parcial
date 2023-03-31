@@ -81,6 +81,57 @@ public class UpdateDocumentTest {
         assertEquals("Document with Id: 2dc074a1-2100-4d49-9823-aa12de103e70 not found", detail.getErrorMessage(), "Error message doesn't match");
     }
 
+    @Test
+    @DisplayName("When document title is different, but the new title already exists throws an ERR_DUPLICATED")
+    public void TestUpdate_WhenDocumentTitleIsDiferentAndNewAlreadyExists(){
+        var document = defaultDocument();
+        var documentDTO = defaultDocumentDTO();
+        var document2 = IcesiDocument.builder()
+                .icesiDocumentId(UUID.fromString("2dc074a1-5600-4d49-9829-aa12de103e70"))
+                .title("Some title 1")
+                .text("loreipsum")
+                .icesiUser(defaultUser())
+                .status(IcesiDocumentStatus.DRAFT)
+                .build();
+        documentDTO.setTitle("Some Title 1");
+        document.setStatus(IcesiDocumentStatus.DRAFT);
+        documentDTO.setStatus(IcesiDocumentStatus.DRAFT);
+        var documentId = "2dc074a1-2100-4d49-9823-aa12de103e70";
+
+        when(documentRepository.findById((String) any())).thenReturn(Optional.of(document));
+        when(documentRepository.findByTitle(any())).thenReturn(Optional.of(document2));
+
+        var exception = assertThrows(IcesiException.class, () -> documentService.updateDocument(documentId,documentDTO));
+
+        var error = exception.getError();
+        var details = error.getDetails();
+        assertEquals(1,details.size());
+        var detail = details.get(0);
+        assertEquals("ERR_DUPLICATED",detail.getErrorCode(), "Code doesn't match");
+        assertEquals("resource Document with field Title: Some title 1, already exists", detail.getErrorMessage(), "Error message doesn't match");
+    }
+    @Test
+    @DisplayName("Update document success")
+    public void updateDocument_HappyPath() {
+        // Arrange
+        var document = defaultDocument();
+        var documentDTO = defaultDocumentDTO();
+        var documentId = "2dc074a1-2100-4d49-9823-aa12de103e70";
+        documentDTO.setTitle("Some TITLE 1");
+        document.setStatus(IcesiDocumentStatus.DRAFT);
+        documentDTO.setStatus(IcesiDocumentStatus.DRAFT);
+
+        when(documentRepository.findById((String) any())).thenReturn(Optional.of(document));
+        when(documentRepository.findByTitle(any())).thenReturn(Optional.empty());
+        // Act
+        documentService.updateDocument(documentId, documentDTO);
+
+        // Assert
+        verify(documentRepository, times(1)).findById(documentId);
+        verify(documentRepository,times(1)).findByTitle(documentDTO.getTitle());
+        verify(documentMapper, times(1)).fromIcesiDocument(any());
+        verify(documentRepository,times(1)).save(any());
+    }
     private IcesiDocumentDTO defaultDocumentDTO(){
         return IcesiDocumentDTO.builder()
                 .icesiDocumentId(UUID.fromString("2dc074a1-2100-4d49-9823-aa12de103e70"))

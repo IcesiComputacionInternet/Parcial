@@ -69,7 +69,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
             ).get();
         }
         if(!icesiDocumentDTO.getTitle().equals(document.getTitle())){
-            catchExistsDocumentTitle(document.getTitle());
+            catchExistsDocumentTitle(icesiDocumentDTO.getTitle());
             document.setTitle(icesiDocumentDTO.getTitle());
         }
         document.setText(icesiDocumentDTO.getText());
