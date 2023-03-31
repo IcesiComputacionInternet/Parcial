@@ -15,10 +15,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
 
@@ -49,40 +46,23 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
 
-        List<IcesiDocumentDTO> errors = documentsDTO.stream(()->).toList();
-
+        //List<IcesiErrorDetail> errors = documentsDTO.stream(()->).toList();
+        return null;
     }
 
     @Override
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
+
         var document = documentRepository.findById(icesiDocumentDTO.getIcesiDocumentId()).orElseThrow(createIcesiException(
                 "Document not found",
                 HttpStatus.NOT_FOUND,
                 new DetailBuilder(ErrorCode.ERR_404, "Document", "Id", documentId)
         ));
 
-        if(document.getIcesiUser().getIcesiUserId() != icesiDocumentDTO.getUserId()){
-            createIcesiException(
-                    "Try to update user, invalid action",
-                    HttpStatus.NOT_ACCEPTABLE,
-                    new DetailBuilder(ErrorCode.ERR_404, "Document", "Id", documentId)
-            );
-        }
-        if(document.getStatus() == IcesiDocumentStatus.DRAFT || document.getStatus() == IcesiDocumentStatus.REVISION ){
-            createIcesiException(
-                    "Try to update approved document, invalid action",
-                    HttpStatus.NOT_ACCEPTABLE,
-                    new DetailBuilder(ErrorCode.ERR_404, "Document", "Id", documentId)
-            );
-        }
 
-        if(documentRepository.findByTitle(icesiDocumentDTO.getTitle()).isPresent()){
-            createIcesiException(
-                    "Title must be unique",
-                    HttpStatus.NOT_ACCEPTABLE,
-                    new DetailBuilder(ErrorCode.ERR_404, "Document", "Id", documentId)
-            );
-        }
+
+        validateStatus(document.getStatus(),icesiDocumentDTO);
+        validateTitle(icesiDocumentDTO);
 
         document.setText(icesiDocumentDTO.getText());
         document.setTitle(icesiDocumentDTO.getTitle());
@@ -91,8 +71,29 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
         return documentMapper.fromIcesiDocument(documentRepository.save(document));
     }
 
+    private void validateStatus(IcesiDocumentStatus status,IcesiDocumentDTO icesiDocumentDTO){
+        if(status == IcesiDocumentStatus.APPROVED ){
+            throw createIcesiException(
+                    "Try to update approved document, invalid action",
+                    HttpStatus.BAD_REQUEST,
+                    new DetailBuilder(ErrorCode.ERR_500, "Document", "Id", icesiDocumentDTO.getIcesiDocumentId())
+            ).get();
+        }
+    }
+
+    private void validateTitle(IcesiDocumentDTO icesiDocumentDTO){
+        if(documentRepository.findByTitle(icesiDocumentDTO.getTitle()).isPresent()){
+            throw createIcesiException(
+                    "Title must be unique",
+                    HttpStatus.NOT_ACCEPTABLE,
+                    new DetailBuilder(ErrorCode.ERR_404, "Document", "Id", icesiDocumentDTO.getIcesiDocumentId())
+            ).get();
+        }
+    }
+
     @Override
     public IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO) {
+        validateTitle(icesiDocumentDTO);
 
         IcesiDocumentDTO opDto = Optional.of(icesiDocumentDTO).orElseThrow(
                 createIcesiException(
@@ -111,7 +112,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                         )
                 );
 
-        var icesiDocument = documentMapper.fromIcesiDocumentDTO(opDto);
+        var icesiDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
         icesiDocument.setIcesiUser(user);
         return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocument));
     }
