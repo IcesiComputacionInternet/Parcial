@@ -47,9 +47,9 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
 
         //
-        Optional<IcesiDocument> icesiDocument = documentRepository.findById(UUID.fromString(documentId));
+        Optional<IcesiDocument> icesiDocumentOld = documentRepository.findById(UUID.fromString(documentId));
         //Ifs eliminated
-        executeDocumentUpdateValidation(icesiDocument, documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO));
+        executeDocumentUpdateValidation(icesiDocumentOld, documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO));
         //update
         IcesiDocument icesiDocumentNew = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
         return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocumentNew));
@@ -65,13 +65,13 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     private void isDocumentPresent(Optional<IcesiDocument> icesiDocument){
         if(icesiDocument.isEmpty()){
-            throw new RuntimeException("Requested document don't exists");
+            throw new RuntimeException("Requested document doesn't exists");
         }
     }
 
     private void verifyDocumentStatusIsUpdatable(IcesiDocumentStatus documentStatus){
         if(documentStatus != IcesiDocumentStatus.DRAFT && documentStatus != IcesiDocumentStatus.REVISION){
-            throw new RuntimeException("Current status does not allow update");
+            throw new RuntimeException("Status approved. Can´t update");
         }
     }
 

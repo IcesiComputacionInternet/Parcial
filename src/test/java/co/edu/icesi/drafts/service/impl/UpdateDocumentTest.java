@@ -25,7 +25,7 @@ public class UpdateDocumentTest {
 
     private static final UUID DOCUMENT_UUID = UUID.fromString("5b666754-e217-4775-9c95-352ebb0673cb");
 
-    private static final UUID USER_UUID = UUID.fromString("be01f5ea-3b10-4f1a-b9d3-710b403f7f4c");
+    private static final UUID USER_UUID = UUID.fromString("fd127023-e154-4ff2-a9e2-fbd648735d80");
     private IcesiDocumentService documentService;
 
     private IcesiDocumentRepository documentRepository;
@@ -51,21 +51,28 @@ public class UpdateDocumentTest {
         //TODO implement test!
         //kill me now pls
         when(documentRepository.findById(any())).thenReturn(Optional.empty());
+        when(icesiUserMapper.fromIcesiUserDTO(defaultIcesiUserDTO())).thenReturn(defaultIcesiUser());
+        when(documentMapper.fromIcesiDocumentDTO(defaultDocumentDTO())).thenReturn(defaultDocument());
+        when(documentRepository.findById(DOCUMENT_UUID)).thenReturn(Optional.ofNullable(defaultDocument()));
         try{
-            IcesiUser icesiUser = icesiUserMapper.fromIcesiUserDTO(defaultIcesiUser());
+
+            IcesiUser icesiUser = icesiUserMapper.fromIcesiUserDTO(defaultIcesiUserDTO());
             userRepository.save(icesiUser);
             IcesiDocument icesiDocument = documentMapper.fromIcesiDocumentDTO(defaultDocumentDTO());
-            documentRepository.save(icesiDocument);
+
+
+
+            documentService.updateDocument(String.valueOf(DOCUMENT_UUID), defaultDocumentDTO());
             fail();
             //
             documentService.updateDocument(DOCUMENT_UUID.toString(), defaultDocumentDTO());
         }catch (RuntimeException e){
-            assertEquals("Status approved", e.getMessage());
+            assertEquals("Status approved. Can´t update", e.getMessage());
         }
 
     }
 
-    private IcesiUserDTO defaultIcesiUser(){
+    private IcesiUserDTO defaultIcesiUserDTO(){
        return IcesiUserDTO.builder()
                .documents(null)
                .email("email")
@@ -77,6 +84,18 @@ public class UpdateDocumentTest {
                .build();
     }
 
+    private IcesiUser defaultIcesiUser(){
+        return IcesiUser.builder()
+                .documents(null)
+                .email("email")
+                .code("code")
+                .phoneNumber("phone")
+                .firstName("Juan")
+                .lastName("Felipe")
+                .icesiUserId(USER_UUID)
+                .build();
+    }
+
     private IcesiDocumentDTO defaultDocumentDTO() {
         return IcesiDocumentDTO.builder()
                 .text("lorena impsumi")
@@ -84,6 +103,16 @@ public class UpdateDocumentTest {
                 .status(IcesiDocumentStatus.APPROVED)
                 .icesiDocumentId(DOCUMENT_UUID)
                 .userId(USER_UUID)
+                .build();
+    }
+
+    private IcesiDocument defaultDocument() {
+        return IcesiDocument.builder()
+                .text("lorena impsumi")
+                .title("inspiring title")
+                .status(IcesiDocumentStatus.APPROVED)
+                .icesiDocumentId(DOCUMENT_UUID)
+                .icesiUser(defaultIcesiUser())
                 .build();
     }
 }
