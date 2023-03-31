@@ -62,6 +62,24 @@ public class UpdateDocumentTest {
         assertEquals("ERR_400",detail.getErrorCode(), "Code doesn't match");
         assertEquals("field Document Status", detail.getErrorMessage(), "Error message doesn't match");
     }
+    @Test
+    @DisplayName("When document Id doesn't exists it throws an exception 404")
+    public void TestUpdate_WhenDocumentIdDoesntExists(){
+        var document = defaultDocument();
+        var documentDTO = defaultDocumentDTO();
+        var documentId = "2dc074a1-2100-4d49-9823-aa12de103e70";
+
+        when(documentRepository.findById((String) any())).thenReturn(Optional.empty());
+
+        var exception = assertThrows(IcesiException.class, () -> documentService.updateDocument(documentId,documentDTO));
+
+        var error = exception.getError();
+        var details = error.getDetails();
+        assertEquals(1,details.size());
+        var detail = details.get(0);
+        assertEquals("ERR_404",detail.getErrorCode(), "Code doesn't match");
+        assertEquals("Document with Id: 2dc074a1-2100-4d49-9823-aa12de103e70 not found", detail.getErrorMessage(), "Error message doesn't match");
+    }
 
     private IcesiDocumentDTO defaultDocumentDTO(){
         return IcesiDocumentDTO.builder()
