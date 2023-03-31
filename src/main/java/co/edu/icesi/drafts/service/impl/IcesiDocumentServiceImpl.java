@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
 
@@ -30,6 +29,8 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     private final IcesiUserRepository userRepository;
     private final IcesiDocumentRepository documentRepository;
     private final IcesiDocumentMapper documentMapper;
+
+    private static final String DOCUMENT = "Document";
 
     public IcesiDocumentServiceImpl(IcesiUserRepository userRepository, IcesiDocumentRepository documentRepository, @Qualifier("icesiDocumentMapperImpl") IcesiDocumentMapper documentMapper) {
         this.userRepository = userRepository;
@@ -52,7 +53,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                         createIcesiException(
                                 "Document not found",
                                 HttpStatus.NOT_FOUND,
-                                new DetailBuilder(ErrorCode.ERR_404, "Document", "Id", documentId)
+                                new DetailBuilder(ErrorCode.ERR_404, DOCUMENT, "Id", documentId)
                         )
                 );
     }
@@ -74,7 +75,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
         documentRepository.saveAll(documents);
 
-        return documents.stream().map(documentMapper::fromIcesiDocument).collect(Collectors.toList());
+        return documents.stream().map(documentMapper::fromIcesiDocument).toList();
     }
 
     private IcesiUser getUserByID(UUID id) {
@@ -133,7 +134,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                         createIcesiException(
                                 "Document not found",
                                 HttpStatus.NOT_FOUND,
-                                new DetailBuilder(ErrorCode.ERR_404, "Document", "Id", documentId)
+                                new DetailBuilder(ErrorCode.ERR_404, DOCUMENT, "Id", documentId)
                         )
                 );
         validateDocumentUser(document.getIcesiUser().getIcesiUserId(), icesiDocumentDTO.getUserId());
@@ -160,7 +161,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
             throw createIcesiException(
                     "You are trying to change the user of the document",
                     HttpStatus.BAD_REQUEST,
-                    new DetailBuilder(ErrorCode.ERR_400, "Document", "User", newUserId)
+                    new DetailBuilder(ErrorCode.ERR_400, DOCUMENT, "User", newUserId)
             ).get();
         }
     }
@@ -171,7 +172,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
             throw createIcesiException(
                     "Document title already exists",
                     HttpStatus.BAD_REQUEST,
-                    new DetailBuilder(ErrorCode.ERR_DUPLICATED, "Document", "Title", title)
+                    new DetailBuilder(ErrorCode.ERR_DUPLICATED, DOCUMENT, "Title", title)
             ).get();
         }
     }
