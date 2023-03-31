@@ -62,9 +62,46 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                 .toList();
     }
 
+    public List<IcesiErrorDetail> findTitleErrors(List<IcesiDocumentDTO> documentsDTO) {
+        List<IcesiErrorDetail> titleErrors = new ArrayList<>(documentsDTO.stream()
+                .filter(documentDTO -> documentRepository.findByTitle(documentDTO.getTitle()).isPresent())
+                .map(documentDTO -> new IcesiErrorDetail(
+                        "ERR_DUPLICATED",
+                        "resource Document with field Title: %s, already exists".formatted(documentDTO.getTitle())
+                ))
+                .toList());
+
+        return titleErrors;
+    }
+
+    public List<IcesiErrorDetail> findNotFoundUserErrors(List<IcesiDocumentDTO> documentsDTO) {
+        List<IcesiErrorDetail> notFoundUserErrors = new ArrayList<>(documentsDTO.stream()
+                .filter(documentDTO -> userRepository.findById(documentDTO.getUserId()).isEmpty())
+                .map(documentDTO -> new IcesiErrorDetail(
+                        "ERR_404",
+                        "User with Id: %s not found".formatted(documentDTO.getUserId())
+                ))
+                .toList());
+
+        return notFoundUserErrors;
+    }
+
     public void checkErrorsInDocumentList(List<IcesiDocumentDTO> documentsDTO) {
         // Pending
         // I need to do this method so that I can check all conditions while creating a list of documents
+        List<IcesiErrorDetail> errors = new ArrayList<>();
+
+        errors.addAll(findTitleErrors(documentsDTO));
+        errors.addAll(findNotFoundUserErrors(documentsDTO));
+
+        if(errors.size() > 0)
+            throw new IcesiException(
+                    "Errores encontrados al intentar añadir",
+                    IcesiError.builder()
+                            .status(HttpStatus.BAD_REQUEST)
+                            .details(errors)
+                            .build()
+            );
     }
 
     public IcesiUser getUserById(UUID userId) {
