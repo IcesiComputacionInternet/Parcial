@@ -2,9 +2,7 @@ package co.edu.icesi.drafts.service.impl;
 
 import co.edu.icesi.drafts.controller.IcesiDocumentController;
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
-import co.edu.icesi.drafts.dto.IcesiUserDTO;
 import co.edu.icesi.drafts.error.exception.*;
-import co.edu.icesi.drafts.error.util.IcesiExceptionBuilder;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
 import co.edu.icesi.drafts.model.IcesiDocument;
 import co.edu.icesi.drafts.model.IcesiDocumentStatus;
@@ -14,7 +12,6 @@ import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
 
 import java.util.*;
 
@@ -136,7 +133,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
             throw createIcesiException(
                     "User not found",
                     HttpStatus.NOT_FOUND,
-                    new DetailBuilder(ErrorCode.ERR_REQUIRED_FIELD, "userId", "Id", icesiDocumentDTO.getUserId())
+                    new DetailBuilder(ErrorCode.ERR_REQUIRED_FIELD, "userId", "Id", null)
             ).get();
         }
     }
