@@ -4,6 +4,7 @@ import co.edu.icesi.drafts.api.IcesiDocumentAPI;
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -11,7 +12,6 @@ import java.util.List;
 @RestController
 @AllArgsConstructor
 public class IcesiDocumentController implements IcesiDocumentAPI {
-
     private final IcesiDocumentService documentService;
 
     @Override
