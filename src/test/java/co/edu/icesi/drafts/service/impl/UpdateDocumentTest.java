@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.*;
 
@@ -53,12 +54,15 @@ public class UpdateDocumentTest {
         try{
             IcesiUser icesiUser = icesiUserMapper.fromIcesiUserDTO(defaultIcesiUser());
             userRepository.save(icesiUser);
-
+            IcesiDocument icesiDocument = documentMapper.fromIcesiDocumentDTO(defaultDocumentDTO());
+            documentRepository.save(icesiDocument);
+            fail();
+            //
             documentService.updateDocument(DOCUMENT_UUID.toString(), defaultDocumentDTO());
-        }catch (IcesiException e){
-
+        }catch (RuntimeException e){
+            assertEquals("Status approved", e.getMessage());
         }
-        fail();
+
     }
 
     private IcesiUserDTO defaultIcesiUser(){

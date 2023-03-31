@@ -46,39 +46,46 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     @Override
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
 
-        Optional<IcesiDocument> icesiDocument = documentRepository.findById(UUID.fromString(documentId));
-        //document exists
-        if(icesiDocument.isPresent()){
-
-            //Status allows update
-            if(icesiDocumentDTO.getStatus()== IcesiDocumentStatus.DRAFT || icesiDocumentDTO.getStatus()==IcesiDocumentStatus.REVISION){
-
-                //User not changed
-                IcesiDocumentDTO icesiDocumentDTOFound = documentMapper.fromIcesiDocument(icesiDocument.get());
-                if(icesiDocumentDTOFound.getUserId()==icesiDocumentDTO.getUserId()){
-
-                    //Unique title
-                    Optional<IcesiDocument> icesiDocumentTitle = documentRepository.findByTitle(icesiDocumentDTO.getTitle());
-                    if(icesiDocumentTitle.isPresent()){
-                        //throw new
-                    }else{
-                        IcesiDocument icesiDocumentNew = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
-                        return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocumentNew));
-                    }
-                }else{
-                    //throw new RuntimeException("Status approved. Can´t update");
-                }
-               // throw new IcesiException("ERROR", new IcesiError(HttpStatus.BAD_REQUEST, new IcesiErrorDetail("CODE-01", "AYUDA")));
-            }else{
-                //throw new RuntimeException("Status approved. Can´t update");
-            }
-        }else{
-            //throw new RuntimeException("Status approved. Can´t update");
-        }
         //
+        Optional<IcesiDocument> icesiDocument = documentRepository.findById(UUID.fromString(documentId));
+        //Ifs eliminated
+        executeDocumentUpdateValidation(icesiDocument, documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO));
+        //update
+        IcesiDocument icesiDocumentNew = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
+        return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocumentNew));
         // Optional<IcesiDocument> icesiDocument = documentRepository.findById(UUID.fromString(documentId));
+    }
 
-        return null;
+    private void executeDocumentUpdateValidation(Optional<IcesiDocument> savedIcesiDocument, IcesiDocument newIcesiDocument){
+        isDocumentPresent(savedIcesiDocument);
+        verifyDocumentStatusIsUpdatable(savedIcesiDocument.get().getStatus());
+        verifyDocumentsUserStillsTheSame(savedIcesiDocument.get(), newIcesiDocument);
+        isDocumentTitleUnique(newIcesiDocument);
+    }
+
+    private void isDocumentPresent(Optional<IcesiDocument> icesiDocument){
+        if(icesiDocument.isEmpty()){
+            throw new RuntimeException("Requested document don't exists");
+        }
+    }
+
+    private void verifyDocumentStatusIsUpdatable(IcesiDocumentStatus documentStatus){
+        if(documentStatus != IcesiDocumentStatus.DRAFT && documentStatus != IcesiDocumentStatus.REVISION){
+            throw new RuntimeException("Current status does not allow update");
+        }
+    }
+
+    private void verifyDocumentsUserStillsTheSame(IcesiDocument savedIcesiDocument, IcesiDocument newIcesiDocument){
+        if(!savedIcesiDocument.getIcesiUser().equals(newIcesiDocument.getIcesiUser())){
+            throw new RuntimeException("Document's user has been changed");
+        }
+    }
+
+    private void isDocumentTitleUnique(IcesiDocument newIcesiDocument){
+        Optional<IcesiDocument> previousDocument = documentRepository.findByTitle(newIcesiDocument.getTitle());
+        if(previousDocument.isPresent()){
+            throw new RuntimeException("Already exists a document with the same title");
+        }
     }
 
     @Override
