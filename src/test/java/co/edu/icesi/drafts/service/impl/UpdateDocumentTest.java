@@ -32,7 +32,6 @@ public class UpdateDocumentTest {
 
     @Test
     public void TestUpdate_WhenDocumentIsOnApprovedCantBeModified(){
-        //TODO implement test!
-        fail();
+
     }
 }

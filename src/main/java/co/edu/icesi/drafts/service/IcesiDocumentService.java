@@ -1,6 +1,7 @@
 package co.edu.icesi.drafts.service;
 
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
