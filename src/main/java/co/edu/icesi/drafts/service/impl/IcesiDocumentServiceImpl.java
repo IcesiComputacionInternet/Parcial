@@ -23,8 +23,9 @@ import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiEx
 import static java.util.UUID.fromString;
 
 
-@AllArgsConstructor
-class IcesiDocumentServiceImpl implements IcesiDocumentService {
+
+@Service
+public class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
 
     private final IcesiUserRepository userRepository;
