@@ -11,6 +11,7 @@ import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -39,6 +40,7 @@ public class UpdateDocumentTest {
     }
 
     @Test
+    @DisplayName("Update document success")
     public void testUpdate_HappyPath() {
         when(documentRepository.findById(any(UUID.class))).thenReturn(Optional.ofNullable(defaultDocument()));
         when(documentRepository.findByTitle(any(String.class))).thenReturn(Optional.empty());
@@ -54,6 +56,7 @@ public class UpdateDocumentTest {
     }
 
     @Test
+    @DisplayName("When status is approved, document can't be modified and an error is thrown")
     public void TestUpdate_WhenDocumentIsOnApprovedCantBeModified(){
         var documentApproved = defaultDocument();
         documentApproved.setStatus(IcesiDocumentStatus.APPROVED);
@@ -73,6 +76,7 @@ public class UpdateDocumentTest {
     }
 
     @Test
+    @DisplayName("When the title already exists, an error is thrown")
     public void testUpdate_WhenTitleAlreadyExists() {
         when(documentRepository.findById(any(UUID.class))).thenReturn(Optional.ofNullable(defaultDocument()));
         when(documentRepository.findByTitle(any(String.class))).thenReturn(Optional.of(defaultDocument()));
