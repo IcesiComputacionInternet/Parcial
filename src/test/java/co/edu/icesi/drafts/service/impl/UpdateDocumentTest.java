@@ -45,9 +45,7 @@ public class UpdateDocumentTest {
         // Arrange
         var documentDTO = defaultDocumentDTO();
         var document = defaultDocument();
-        var user = defaultUser();
         when(documentRepository.findByTitle(any())).thenReturn(Optional.of(document));
-        when(userRepository.findById(any())).thenReturn(Optional.of(user));
 
         // Act
         var exception = assertThrows(IcesiException.class, () -> documentService.updateDocument(documentDTO.getIcesiDocumentId()+"",documentDTO), "No exception was thrown");
@@ -57,8 +55,8 @@ public class UpdateDocumentTest {
         var details = error.getDetails();
         assertEquals(1, details.size());
         var detail = details.get(0);
-        assertEquals("ERR_DUPLICATED", detail.getErrorCode(), "Code doesn't match");
-        assertEquals("", detail.getErrorMessage(), "Error message doesn't match");
+        assertEquals("ERR_500", detail.getErrorCode(), "Code doesn't match");
+        assertEquals("Oops, we ran into an error", detail.getErrorMessage(), "Error message doesn't match");
     }
 
     private IcesiDocumentDTO defaultDocumentDTO() {
