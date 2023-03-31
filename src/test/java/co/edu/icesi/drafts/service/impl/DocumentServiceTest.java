@@ -273,6 +273,4 @@ public class DocumentServiceTest {
                 .phoneNumber("+57 00000000")
                 .build();
     }
-
-
 }

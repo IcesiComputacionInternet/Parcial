@@ -2,6 +2,7 @@ package co.edu.icesi.drafts.controller;
 
 import co.edu.icesi.drafts.api.IcesiDocumentAPI;
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
+import co.edu.icesi.drafts.model.IcesiDocument;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;

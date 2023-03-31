@@ -6,6 +6,7 @@ import co.edu.icesi.drafts.error.exception.*;
 import co.edu.icesi.drafts.error.util.IcesiExceptionBuilder;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
 import co.edu.icesi.drafts.model.IcesiDocument;
+import co.edu.icesi.drafts.model.IcesiDocumentStatus;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -42,19 +44,50 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                 .toList();
     }
 
-
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
+
         return null;
     }
-
+    
     @Override
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
-        return null;
+        var document = documentRepository.findById(icesiDocumentDTO.getIcesiDocumentId())
+                .orElseThrow(
+                        createIcesiException(
+                                "Document not found to be update",
+                                HttpStatus.NOT_FOUND,
+                                new DetailBuilder(ErrorCode.ERR_404, "Document", "Id", documentId)
+                        )
+                );
+        validateStatus(icesiDocumentDTO);
+        validateExistTitle(icesiDocumentDTO.getTitle());
+        IcesiDocument upatedDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
+        return documentMapper.fromIcesiDocument(documentRepository.save(upatedDocument));
+    }
+
+    private void validateStatus(IcesiDocumentDTO documentDTO){
+        if(documentDTO.getStatus().equals(IcesiDocumentStatus.APPROVED)){
+            throw createIcesiException(
+                    "The document status isn't valid to be update",
+                    HttpStatus.BAD_REQUEST,
+                    new DetailBuilder(ErrorCode.ERR_500)).get();
+        }
+    }
+
+    public void validateExistTitle(String documentTitle){
+        documentRepository.findByTitle(documentTitle).ifPresent(err -> {
+            throw createIcesiException(
+                    "The title of this document already exists",
+                    HttpStatus.BAD_REQUEST,
+                    new DetailBuilder(ErrorCode.ERR_DUPLICATED, "Document", "Title", documentTitle)
+            ).get();
+        }
+        );
     }
 
     @Override
-    public IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO) {
+    public IcesiDocumentDTO createDocument (IcesiDocumentDTO icesiDocumentDTO){
         var user = userRepository.findById(icesiDocumentDTO.getUserId())
                 .orElseThrow(
                         createIcesiException(
