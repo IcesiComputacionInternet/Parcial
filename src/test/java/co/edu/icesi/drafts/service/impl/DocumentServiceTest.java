@@ -110,6 +110,7 @@ public class DocumentServiceTest {
 
         when(userRepository.findById(any())).thenReturn(Optional.of(user));
         when(documentRepository.findByTitle(any())).thenReturn(Optional.empty());
+        when(documentRepository.saveAll(any())).thenReturn(defaultDocuments());
 
         documentService.createDocuments(documentsDTO);
 
@@ -208,7 +209,6 @@ public class DocumentServiceTest {
         var detail1 = details.get(1);
         assertEquals("ERR_DUPLICATED", detail1.getErrorCode(), "Code doesn't match");
         assertEquals("resource Document with field Title: Some title, already exists", detail1.getErrorMessage(), "Error message doesn't match");
-
     }
 
     private List<IcesiDocumentDTO> defaultDocumentsDTO() {
