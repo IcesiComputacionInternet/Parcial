@@ -46,6 +46,13 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
+
+        Optional<IcesiError> error = Optional.of(validateErrors(documentsDTO));
+
+        if(error.isPresent()){
+            throw new IcesiException("Error Creating Documents",validateErrors(documentsDTO));
+        }
+
         List<IcesiDocument> icesiDocuments = documentsDTO.stream()
                 .map(documentDTO -> {
                     IcesiDocument document  = documentMapper.fromIcesiDocumentDTO(documentDTO);
@@ -107,15 +114,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
         validateTitle(icesiDocumentDTO);
         validateIcesiUserIdDtoIsNull(icesiDocumentDTO);
 
-        var user = userRepository.findById(icesiDocumentDTO.getUserId())
-                .orElseThrow(
-                        createIcesiException(
-                                "User not found",
-                                HttpStatus.NOT_FOUND,
-                                new DetailBuilder(ErrorCode.ERR_404, "User", "Id", icesiDocumentDTO.getUserId())
-                        )
-                );
-
+        IcesiUser user = findById(icesiDocumentDTO.getUserId());
         var icesiDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
         icesiDocument.setIcesiUser(user);
         return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocument));
@@ -140,5 +139,29 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                     new DetailBuilder(ErrorCode.ERR_REQUIRED_FIELD, "userId", "Id", icesiDocumentDTO.getUserId())
             ).get();
         }
+    }
+
+    private IcesiError validateErrors(List<IcesiDocumentDTO> icesiDocumentDTO) {
+        List<IcesiErrorDetail> errors = new ArrayList<>();
+        icesiDocumentDTO.forEach(
+                dto -> {
+                    try {
+                        validateTitle(dto);
+                    } catch (IcesiException exception) {
+                        errors.add(exception.getError().getDetails().get(0));
+                    }
+                    try {
+                        findById(dto.getUserId());
+                    } catch (IcesiException exception) {
+                        errors.add(exception.getError().getDetails().get(0));
+                    }
+                }
+        );
+
+        if (errors.isEmpty()) {
+            return null;
+        }
+
+        return new IcesiError(HttpStatus.BAD_REQUEST, errors);
     }
 }
