@@ -4,11 +4,15 @@ import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.model.IcesiDocument;
 import org.mapstruct.Mapper;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface IcesiDocumentMapper {
 
     IcesiDocumentDTO fromIcesiDocument(IcesiDocument icesiDocument);
 
     IcesiDocument fromIcesiDocumentDTO(IcesiDocumentDTO icesiDocumentDTO);
+
+    //List<IcesiDocument> fromListIcesiDocumentDTO(List<IcesiDocumentDTO> docs);
 
 }

@@ -4,15 +4,20 @@ import co.edu.icesi.drafts.api.IcesiDocumentAPI;
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
-@AllArgsConstructor
+//@AllArgsConstructor
 public class IcesiDocumentController implements IcesiDocumentAPI {
 
     private final IcesiDocumentService documentService;
+
+    public IcesiDocumentController(IcesiDocumentService ids){
+        documentService = ids;
+    }
 
     @Override
     public List<IcesiDocumentDTO> getAllDocuments() {
