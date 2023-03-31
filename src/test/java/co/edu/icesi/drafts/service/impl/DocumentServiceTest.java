@@ -4,7 +4,7 @@ import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.error.exception.IcesiErrorDetail;
 import co.edu.icesi.drafts.error.exception.IcesiException;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
-import co.edu.icesi.drafts.mapper.IcesiDocumentMapperImpl;
+import co.edu.icesi.drafts.mapper.impl.IcesiDocumentMapperImpl;
 import co.edu.icesi.drafts.model.IcesiDocument;
 import co.edu.icesi.drafts.model.IcesiUser;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
@@ -110,13 +110,13 @@ public class DocumentServiceTest {
 
         when(userRepository.findById(any())).thenReturn(Optional.of(user));
         when(documentRepository.findByTitle(any())).thenReturn(Optional.empty());
+        when(documentRepository.saveAll(any())).thenReturn(defaultDocuments());
 
         documentService.createDocuments(documentsDTO);
 
         verify(documentRepository, times(1)).saveAll(documents);
         verify(documentMapper, times(2)).fromIcesiDocumentDTO(any());
         verify(documentMapper, times(2)).fromIcesiDocument(any());
-
     }
 
     @Test
