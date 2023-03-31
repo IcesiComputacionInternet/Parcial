@@ -46,8 +46,13 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
 
+        // Check general errors in the documents
+        // First, it validates whether we have any title repeated in the documents
+        // Then, it checks if each document has a valid user.
         checkErrorsInDocumentList(documentsDTO);
 
+
+        // Then we map the dto list to turn it into model list, adding the user to it in the process
         List<IcesiDocument> icesiDocuments = documentsDTO.stream().map(document -> {
             IcesiDocument icesiDocument = documentMapper.fromIcesiDocumentDTO(document);
             IcesiUser user = getUserById(document.getUserId());
@@ -55,14 +60,17 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
             return icesiDocument;
         }).toList();
 
+        // We save the list as we checked the constraints before.
         documentRepository.saveAll(icesiDocuments);
 
+        // Then we return the dto list of the icesiDocuments list we saved
         return icesiDocuments.stream()
                 .map(documentMapper::fromIcesiDocument)
                 .toList();
     }
 
     public List<IcesiErrorDetail> findTitleErrors(List<IcesiDocumentDTO> documentsDTO) {
+        // It checks if there is any title repeated in a IcesiDocumentDTO list
         List<IcesiErrorDetail> titleErrors = new ArrayList<>(documentsDTO.stream()
                 .filter(documentDTO -> documentRepository.findByTitle(documentDTO.getTitle()).isPresent())
                 .map(documentDTO -> new IcesiErrorDetail(
@@ -75,6 +83,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     }
 
     public List<IcesiErrorDetail> findNotFoundUserErrors(List<IcesiDocumentDTO> documentsDTO) {
+        // It checks if there is any not ofund user in a IcesiDocumentDTO list
         List<IcesiErrorDetail> notFoundUserErrors = new ArrayList<>(documentsDTO.stream()
                 .filter(documentDTO -> userRepository.findById(documentDTO.getUserId()).isEmpty())
                 .map(documentDTO -> new IcesiErrorDetail(
@@ -89,6 +98,8 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     public void checkErrorsInDocumentList(List<IcesiDocumentDTO> documentsDTO) {
         // Pending
         // I need to do this method so that I can check all conditions while creating a list of documents
+        // This document uses the findTitleErrors and findNotFoundUserErrors to determine whether there is any error in those categories
+        // Then, it proceeds to save them all in an array and throw an exception whith the data required of the errors
         List<IcesiErrorDetail> errors = new ArrayList<>();
 
         errors.addAll(findTitleErrors(documentsDTO));
@@ -105,13 +116,14 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     }
 
     public IcesiUser getUserById(UUID userId) {
+        // It checks wheter the userID field is null
         if (userId == null)
             throw createIcesiException(
                     "User Id field is empty",
                     HttpStatus.NOT_FOUND,
                     new DetailBuilder(ErrorCode.ERR_REQUIRED_FIELD, "userId", "Id", null)
             ).get();
-
+        // If it wasn't null, returns the user found by thet userId or an exception if that ID doesn't exist.
         return userRepository.findById(userId)
                 .orElseThrow(
                         createIcesiException(
@@ -122,8 +134,11 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                 );
     }
 
+
+
     @Override
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
+        // It checks if the state is approved so it won't be able to update
         if(icesiDocumentDTO.getStatus() == IcesiDocumentStatus.APPROVED) {
             throw createIcesiException(
                     "Can't update a document with APPROVED status",
@@ -131,7 +146,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                     new DetailBuilder(ErrorCode.ERR_500)
             ).get();
         }
-
+        // Finds if the new title already exists. Doesn't use the method as it has another error code
         documentRepository.findByTitle(icesiDocumentDTO.getTitle()).ifPresent(
                 document -> {
                     throw createIcesiException(
@@ -157,6 +172,18 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
         return documentMapper.fromIcesiDocument(document);
     }
 
+    public void checkIfTitleIsRepeated(IcesiDocumentDTO icesiDocumentDTO) {
+        documentRepository.findByTitle(icesiDocumentDTO.getTitle()).ifPresent(
+                document -> {
+                    throw createIcesiException(
+                            "Document with that title already exists",
+                            HttpStatus.BAD_REQUEST,
+                            new DetailBuilder(ErrorCode.ERR_DUPLICATED, "Document", "Title", icesiDocumentDTO.getTitle())
+                    ).get();
+                }
+        );
+    }
+
     @Override
     public IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO) {
         if (icesiDocumentDTO.getUserId() == null) {
@@ -167,15 +194,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
             ).get();
         }
 
-        documentRepository.findByTitle(icesiDocumentDTO.getTitle()).ifPresent(
-                document -> {
-                    throw createIcesiException(
-                            "Document with that title already exists",
-                            HttpStatus.BAD_REQUEST,
-                            new DetailBuilder(ErrorCode.ERR_DUPLICATED, "Document", "Title", icesiDocumentDTO.getTitle())
-                    ).get();
-                }
-        );
+        checkIfTitleIsRepeated(icesiDocumentDTO);
 
         var user = userRepository.findById(icesiDocumentDTO.getUserId())
                 .orElseThrow(
