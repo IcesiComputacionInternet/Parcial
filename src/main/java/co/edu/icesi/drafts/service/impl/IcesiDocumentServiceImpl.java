@@ -28,7 +28,6 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     private final IcesiUserRepository userRepository;
     private final IcesiDocumentRepository documentRepository;
     private final IcesiDocumentMapper documentMapper;
-    private IcesiDocumentController documentController;
 
 
     @Override
@@ -48,14 +47,33 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
 
         Optional<IcesiDocument> icesiDocument = documentRepository.findById(UUID.fromString(documentId));
+        //document exists
         if(icesiDocument.isPresent()){
-            if(icesiDocumentDTO.getStatus()== IcesiDocumentStatus.APPROVED){
-                throw new RuntimeException("Status approved. Can´t update");
+
+            //Status allows update
+            if(icesiDocumentDTO.getStatus()== IcesiDocumentStatus.DRAFT || icesiDocumentDTO.getStatus()==IcesiDocumentStatus.REVISION){
+
+                //User not changed
+                IcesiDocumentDTO icesiDocumentDTOFound = documentMapper.fromIcesiDocument(icesiDocument.get());
+                if(icesiDocumentDTOFound.getUserId()==icesiDocumentDTO.getUserId()){
+
+                    //Unique title
+                    Optional<IcesiDocument> icesiDocumentTitle = documentRepository.findByTitle(icesiDocumentDTO.getTitle());
+                    if(icesiDocumentTitle.isPresent()){
+                        //throw new
+                    }else{
+                        IcesiDocument icesiDocumentNew = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
+                        return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocumentNew));
+                    }
+                }else{
+                    //throw new RuntimeException("Status approved. Can´t update");
+                }
                // throw new IcesiException("ERROR", new IcesiError(HttpStatus.BAD_REQUEST, new IcesiErrorDetail("CODE-01", "AYUDA")));
             }else{
-                IcesiDocument icesiDocumentNew = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
-                return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocumentNew));
+                //throw new RuntimeException("Status approved. Can´t update");
             }
+        }else{
+            //throw new RuntimeException("Status approved. Can´t update");
         }
         //
         // Optional<IcesiDocument> icesiDocument = documentRepository.findById(UUID.fromString(documentId));
@@ -66,6 +84,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     @Override
     public IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO) {
 
+
         IcesiUser user = userRepository.findById(icesiDocumentDTO.getUserId())
                 .orElseThrow(
                         createIcesiException(
@@ -74,6 +93,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                                 new DetailBuilder(ErrorCode.ERR_404, "User", "Id", icesiDocumentDTO.getUserId())
                         )
                 );
+        //the service works with the model classes
         IcesiDocument icesiDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
         icesiDocument.setIcesiUser(user);
         return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocument));
