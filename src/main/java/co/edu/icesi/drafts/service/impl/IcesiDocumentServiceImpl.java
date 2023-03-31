@@ -1,37 +1,37 @@
 package co.edu.icesi.drafts.service.impl;
 
-import co.edu.icesi.drafts.controller.IcesiDocumentController;
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.error.exception.*;
-import co.edu.icesi.drafts.error.util.IcesiExceptionBuilder;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
 import co.edu.icesi.drafts.model.IcesiDocument;
 import co.edu.icesi.drafts.model.IcesiDocumentStatus;
+import co.edu.icesi.drafts.model.IcesiUser;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
 
-
-@AllArgsConstructor
+@Service
+@Component
 class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
 
     private final IcesiUserRepository userRepository;
     private final IcesiDocumentRepository documentRepository;
     private final IcesiDocumentMapper documentMapper;
-    private IcesiDocumentController documentController;
 
-    public IcesiDocumentServiceImpl(IcesiUserRepository userRepository, IcesiDocumentRepository documentRepository, IcesiDocumentMapper documentMapper) {
+    public IcesiDocumentServiceImpl(IcesiUserRepository userRepository, IcesiDocumentRepository documentRepository, @Qualifier("icesiDocumentMapperImpl") IcesiDocumentMapper documentMapper) {
         this.userRepository = userRepository;
         this.documentRepository = documentRepository;
         this.documentMapper = documentMapper;
@@ -60,7 +60,68 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
-        return null;
+        validateListOfDocuments(documentsDTO);
+
+        List<IcesiDocument> documents = documentsDTO.stream().collect(ArrayList::new, (list, doc) ->
+                {
+                    IcesiDocument document = documentMapper.fromIcesiDocumentDTO(doc);
+                    IcesiUser user = getUserByID(doc.getUserId());
+                    document.setIcesiUser(user);
+                    list.add(document);
+                },
+                ArrayList::addAll
+        );
+
+        documentRepository.saveAll(documents);
+
+        return documents.stream().map(documentMapper::fromIcesiDocument).collect(Collectors.toList());
+    }
+
+    private IcesiUser getUserByID(UUID id) {
+        return userRepository.findById(id)
+                .orElseThrow(
+                        createIcesiException(
+                                "User not found",
+                                HttpStatus.NOT_FOUND,
+                                new DetailBuilder(ErrorCode.ERR_404, "User", "Id", id.toString()
+                        )
+                ));
+    }
+
+    private void validateListOfDocuments(List<IcesiDocumentDTO> documentsDTO){
+        List<IcesiErrorDetail> errors = validateTitles(documentsDTO);
+
+        errors.addAll(validateUsersNotFound(documentsDTO));
+
+        if (!errors.isEmpty()) {
+            throw new IcesiException(
+                    "There are errors to create documents",
+                    IcesiError.builder()
+                            .status(HttpStatus.BAD_REQUEST)
+                            .details(errors)
+                            .build()
+            );
+        }
+    }
+
+    //Validate that no document is created with a title that already exists
+    private List<IcesiErrorDetail> validateTitles(List<IcesiDocumentDTO> documentsDTO) {
+        return new ArrayList<>(documentsDTO.stream().filter(documentDTO -> documentRepository.findByTitle(documentDTO.getTitle()).isPresent())
+                .map(documentDTO -> new IcesiErrorDetail(
+                        "ERR_DUPLICATED",
+                        "resource Document with field Title: %s, already exists".formatted(documentDTO.getTitle())
+                ))
+                .toList());
+    }
+
+    //Validate that the user of each document exists
+    private List<IcesiErrorDetail> validateUsersNotFound(List<IcesiDocumentDTO> documentsDTO) {
+        return new ArrayList<>(documentsDTO.stream().filter(documentDTO -> userRepository.findById(documentDTO.getUserId()).isEmpty())
+                .map(documentDTO -> new IcesiErrorDetail(
+                        "ERR_404",
+                        "User with Id: %s not found".formatted(documentDTO.getUserId())
+                ))
+                .toList());
     }
 
     @Override
@@ -74,9 +135,9 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                                 new DetailBuilder(ErrorCode.ERR_404, "Document", "Id", documentId)
                         )
                 );
-        validateDocumentUser(UUID.fromString(documentId), icesiDocumentDTO.getUserId());
+        validateDocumentUser(document.getIcesiDocumentId(), icesiDocumentDTO.getUserId());
         validateDocumentTitle(icesiDocumentDTO.getTitle());
-        IcesiDocument updatedDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
+        var updatedDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
         return documentMapper.fromIcesiDocument(documentRepository.save(updatedDocument));
     }
 
@@ -109,13 +170,26 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
             throw createIcesiException(
                     "Document title already exists",
                     HttpStatus.BAD_REQUEST,
-                    new DetailBuilder(ErrorCode.ERR_400, "Document", "Title", title)
+                    new DetailBuilder(ErrorCode.ERR_DUPLICATED, "Document", "Title", title)
+            ).get();
+        }
+    }
+
+    //Validate user id not null in a document dto
+    private void validateUserIdNotNull(IcesiDocumentDTO icesiDocumentDTO) {
+        if (Objects.isNull(icesiDocumentDTO.getUserId())) {
+            throw createIcesiException(
+                    "User id is null",
+                    HttpStatus.BAD_REQUEST,
+                    new DetailBuilder(ErrorCode.ERR_REQUIRED_FIELD, "userId", "User", null)
             ).get();
         }
     }
 
     @Override
     public IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO) {
+        validateUserIdNotNull(icesiDocumentDTO);
+        validateDocumentTitle(icesiDocumentDTO.getTitle());
         var user = userRepository.findById(icesiDocumentDTO.getUserId())
                 .orElseThrow(
                         createIcesiException(
@@ -129,3 +203,4 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
         return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocument));
     }
 }
+
