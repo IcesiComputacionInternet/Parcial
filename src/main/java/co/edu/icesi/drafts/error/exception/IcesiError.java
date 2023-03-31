@@ -13,5 +13,4 @@ public class IcesiError {
 
     private HttpStatus status;
     private List<IcesiErrorDetail> details;
-
 }

@@ -1,5 +1,6 @@
 package co.edu.icesi.drafts.service.impl;
 
+import co.edu.icesi.drafts.controller.IcesiDocumentController;
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.error.exception.IcesiErrorDetail;
 import co.edu.icesi.drafts.error.exception.IcesiException;
@@ -23,11 +24,8 @@ import static org.mockito.Mockito.*;
 public class DocumentServiceTest {
 
     private IcesiDocumentService documentService;
-
     private IcesiDocumentRepository documentRepository;
-
     private IcesiUserRepository userRepository;
-
     private IcesiDocumentMapper documentMapper;
 
 
@@ -48,6 +46,7 @@ public class DocumentServiceTest {
         var document = defaultDocument();
         when(userRepository.findById(any())).thenReturn(Optional.of(user));
         when(documentRepository.findByTitle(any())).thenReturn(Optional.empty());
+        when(documentRepository.saveAll(any())).thenReturn(defaultDocuments());
         // Act
         documentService.createDocument(documentDTO);
 
@@ -147,7 +146,6 @@ public class DocumentServiceTest {
         var detail1 = details.get(1);
         assertEquals("ERR_DUPLICATED", detail1.getErrorCode(), "Code doesn't match");
         assertEquals("resource Document with field Title: Some title1, already exists", detail1.getErrorMessage(), "Error message doesn't match");
-
     }
 
     @Test
@@ -178,7 +176,6 @@ public class DocumentServiceTest {
         var detail1 = details.get(1);
         assertEquals("ERR_404", detail1.getErrorCode(), "Code doesn't match");
         assertEquals("User with Id: 08a4db02-6625-40ee-b782-088add3a494f not found", detail1.getErrorMessage(), "Error message doesn't match");
-
     }
 
     @Test
@@ -273,6 +270,4 @@ public class DocumentServiceTest {
                 .phoneNumber("+57 00000000")
                 .build();
     }
-
-
 }
