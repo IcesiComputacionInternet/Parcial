@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
 
@@ -49,13 +50,20 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
-        List<IcesiDocument> documents = documentsDTO.stream()
-                .map(x -> documentMapper.fromIcesiDocumentDTO(x)).toList();
+        List<DetailBuilder> details;
+        List<IcesiDocument> documents = documentsDTO.stream().map(x -> documentMapper.fromIcesiDocumentDTO(x)).toList();
+        details = assignUsersToDocuments(documentsDTO, documents);
+        details.addAll(checkThatTitlesAreUnique(documentsDTO));
 
-        assignUsersToDocuments(documentsDTO, documents);
+        if(!details.isEmpty()){
+            throw createIcesiException(
+                    "Some errors occurred while creating the documents",
+                    HttpStatus.BAD_REQUEST,
+                    details.stream().toArray(DetailBuilder[]::new)
+            ).get();
+        }
 
-        return documentRepository.saveAll(documents).stream()
-                .map(x -> documentMapper.fromIcesiDocument(x)).toList();
+        return documentRepository.saveAll(documents).stream().map(x -> documentMapper.fromIcesiDocument(x)).toList();
     }
 
     private List<DetailBuilder> assignUsersToDocuments(List<IcesiDocumentDTO> documentsDTO, List<IcesiDocument> documents){
@@ -71,20 +79,11 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
         return details;
     }
 
-    private void checkThatAllUsersExist(List<IcesiDocumentDTO> documentsDTO){
-        List<DetailBuilder> details = new ArrayList<>();
-        for(IcesiDocumentDTO icesiDocumentDTO: documentsDTO){
-            if(!userRepository.findById(icesiDocumentDTO.getUserId()).isPresent()){
-                details.add(new DetailBuilder(ErrorCode.ERR_404, "User", "Id", icesiDocumentDTO.getUserId()));
-            };
-        }
-        if(!details.isEmpty()){
-            throw createIcesiException(
-                    "Some users do not exist",
-                    HttpStatus.NOT_FOUND,
-                    details.stream().toArray(DetailBuilder[]::new)
-            ).get();
-        }
+    private List<DetailBuilder> checkThatTitlesAreUnique(List<IcesiDocumentDTO> documentsDTO){
+        return documentsDTO.stream()
+                .filter(icesiDocumentDTO -> documentRepository.findByTitle(icesiDocumentDTO.getTitle()).isPresent())
+                .map(icesiDocumentDTO -> new DetailBuilder(ErrorCode.ERR_DUPLICATED, "Document", "Title", icesiDocumentDTO.getTitle()))
+                .collect(Collectors.toList());
     }
 
     @Override
