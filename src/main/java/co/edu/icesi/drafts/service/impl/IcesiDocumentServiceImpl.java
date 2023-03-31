@@ -21,15 +21,13 @@ import java.util.stream.Collectors;
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiError;
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
 
-
-@AllArgsConstructor
+@Service
 class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
 
     private final IcesiUserRepository userRepository;
     private final IcesiDocumentRepository documentRepository;
     private final IcesiDocumentMapper documentMapper;
-    private IcesiDocumentController documentController;
 
     public IcesiDocumentServiceImpl(IcesiUserRepository userRepository, IcesiDocumentRepository documentRepository, IcesiDocumentMapper documentMapper) {
         this.userRepository = userRepository;
