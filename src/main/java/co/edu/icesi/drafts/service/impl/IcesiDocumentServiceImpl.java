@@ -47,7 +47,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
 
-        Optional<IcesiError> error = Optional.of(validateErrors(documentsDTO));
+        Optional<IcesiError> error = Optional.ofNullable(validateErrors(documentsDTO));
 
         if(error.isPresent()){
             throw new IcesiException("Error Creating Documents",validateErrors(documentsDTO));
