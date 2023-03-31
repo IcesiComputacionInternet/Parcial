@@ -1,9 +1,7 @@
 package co.edu.icesi.drafts.service.impl;
 
-import co.edu.icesi.drafts.controller.IcesiDocumentController;
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.error.exception.*;
-import co.edu.icesi.drafts.error.util.IcesiExceptionBuilder;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
 import co.edu.icesi.drafts.model.IcesiDocument;
 import co.edu.icesi.drafts.model.IcesiDocumentStatus;
@@ -11,16 +9,12 @@ import co.edu.icesi.drafts.model.IcesiUser;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
-import lombok.AllArgsConstructor;
-import org.mapstruct.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import java.util.UUID;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -51,7 +45,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
         List<DetailBuilder> details;
-        List<IcesiDocument> documents = documentsDTO.stream().map(x -> documentMapper.fromIcesiDocumentDTO(x)).toList();
+        List<IcesiDocument> documents = documentsDTO.stream().map(documentMapper::fromIcesiDocumentDTO).toList();
         details = assignUsersToDocuments(documentsDTO, documents);
         details.addAll(checkThatTitlesAreUnique(documentsDTO));
 
@@ -59,11 +53,11 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
             throw createIcesiException(
                     "Some errors occurred while creating the documents",
                     HttpStatus.BAD_REQUEST,
-                    details.stream().toArray(DetailBuilder[]::new)
+                    details.toArray(DetailBuilder[]::new)
             ).get();
         }
 
-        return documentRepository.saveAll(documents).stream().map(x -> documentMapper.fromIcesiDocument(x)).toList();
+        return documentRepository.saveAll(documents).stream().map(documentMapper::fromIcesiDocument).toList();
     }
 
     private List<DetailBuilder> assignUsersToDocuments(List<IcesiDocumentDTO> documentsDTO, List<IcesiDocument> documents){
@@ -89,19 +83,30 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     @Override
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
         String documentTitle = icesiDocumentDTO.getTitle();
-        IcesiDocument icesiDocument = documentRepository.findByTitle(documentTitle).orElseThrow(
+        IcesiDocument icesiDocument = documentRepository.findById(UUID.fromString(documentId)).orElseThrow(
                 createIcesiException(
                         "Document not found",
                         HttpStatus.NOT_FOUND,
-                        new DetailBuilder(ErrorCode.ERR_404, "Document", "Title", documentTitle)
+                        new DetailBuilder(ErrorCode.ERR_404, "Document", "Document Id", documentId)
                 )
         );
         checkIfUsersAreDifferent(icesiDocument.getIcesiUser().getIcesiUserId(), icesiDocumentDTO.getUserId());
         checkIfTitleAndTextCouldBeUpdated(icesiDocument, icesiDocumentDTO);
-        checkIfNewTitleExists(icesiDocumentDTO.getTitle());
+        checkIfNewTitleExists(documentTitle);
+        checkIfNewDocumentIdExists(UUID.fromString(documentId), icesiDocumentDTO.getIcesiDocumentId());
         documentRepository.updateDocument(icesiDocumentDTO.getIcesiDocumentId().toString(), icesiDocumentDTO.getTitle(), icesiDocumentDTO.getText(), icesiDocumentDTO.getStatus());
 
-        return getUpdatedDocument(documentTitle);
+        return getUpdatedDocument(icesiDocumentDTO.getIcesiDocumentId());
+    }
+
+    private void checkIfNewDocumentIdExists(UUID actualDocumentId, UUID newDocumentId){
+        if(!actualDocumentId.equals(newDocumentId)){
+            if(documentRepository.findById(newDocumentId).isPresent()){
+                throw createIcesiException("The document id " + newDocumentId + " already exists",
+                        HttpStatus.BAD_REQUEST,
+                        new DetailBuilder(ErrorCode.ERR_DUPLICATED, "Document", "Id", newDocumentId)).get();
+            }
+        }
     }
 
     private void checkIfUsersAreDifferent(UUID icesiUserId1, UUID icesiUserId2){
@@ -112,12 +117,12 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
         }
     }
 
-    private IcesiDocumentDTO getUpdatedDocument(String documentTitle){
-        IcesiDocument icesiDocument = documentRepository.findByTitle(documentTitle).orElseThrow(
+    private IcesiDocumentDTO getUpdatedDocument(UUID documentId){
+        IcesiDocument icesiDocument = documentRepository.findById(documentId).orElseThrow(
                 createIcesiException(
-                        "The user that was just updated no longer exists.",
+                        "The document that was just updated no longer exists",
                         HttpStatus.INTERNAL_SERVER_ERROR,
-                        new DetailBuilder(ErrorCode.ERR_500, null)
+                        new DetailBuilder(ErrorCode.ERR_500, (Object) null)
                 )
         );
         return documentMapper.fromIcesiDocument(icesiDocument);
@@ -128,21 +133,21 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
             if(!icesiDocument.getTitle().equals(icesiDocumentDTO.getTitle())){
                 throw createIcesiException("The title can not be updated",
                         HttpStatus.BAD_REQUEST,
-                        new DetailBuilder(ErrorCode.ERR_400, "Title", "can not be updated because the document status is "+icesiDocument.getStatus().toString())).get();
+                        new DetailBuilder(ErrorCode.ERR_400, "Title", "can not be updated because the document status is "+icesiDocument.getStatus())).get();
             }
 
             if(!icesiDocument.getText().equals(icesiDocumentDTO.getText())){
                 throw createIcesiException("The text can not be updated",
                         HttpStatus.BAD_REQUEST,
-                        new DetailBuilder(ErrorCode.ERR_400, "Text", "can not be updated because the document status is "+icesiDocument.getStatus().toString())).get();
+                        new DetailBuilder(ErrorCode.ERR_400, "Text", "can not be updated because the document status is "+icesiDocument.getStatus())).get();
             }
         }
 
     }
 
     private void checkIfNewTitleExists(String newTitle){
-        if(Optional.ofNullable(documentRepository.findByTitle(newTitle)).isPresent()){
-            throw createIcesiException("The title " + newTitle + " already existed",
+        if(documentRepository.findByTitle(newTitle).isPresent()){
+            throw createIcesiException("The title " + newTitle + " already exists",
                     HttpStatus.BAD_REQUEST,
                     new DetailBuilder(ErrorCode.ERR_DUPLICATED, "Document", "Title", newTitle)).get();
         }

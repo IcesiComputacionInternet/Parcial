@@ -56,6 +56,7 @@ public class UpdateDocumentTest {
                 .title("Some title")
                 .text("loreipsum")
                 .icesiUser(defaultUser())
+                .status(IcesiDocumentStatus.DRAFT)
                 .build();
     }
 
@@ -74,15 +75,15 @@ public class UpdateDocumentTest {
     public void TestUpdate_WhenDocumentIsOnApprovedTheTitleCantBeModified(){
         // Arrange
         var user = defaultUser();
-        var documentDTO = defaultDocument();
-        documentDTO.setStatus(IcesiDocumentStatus.APPROVED);
-        var documentUpdated = defaultDocumentDTO();
-        documentUpdated.setTitle(documentDTO.getTitle()+"1");
+        var document = defaultDocument();
+        document.setStatus(IcesiDocumentStatus.APPROVED);
+        var documentUpdatedDTO = defaultDocumentDTO();
+        documentUpdatedDTO.setTitle(document.getTitle()+"1");
         when(userRepository.findById(any())).thenReturn(Optional.of(user));
-        when(documentRepository.findByTitle(any())).thenReturn(Optional.of(documentDTO));
+        when(documentRepository.findById(any())).thenReturn(Optional.of(document));
 
         // Act
-        IcesiException exception = assertThrows(IcesiException.class, () -> documentService.updateDocument(documentDTO.getIcesiDocumentId().toString(), documentUpdated));
+        IcesiException exception = assertThrows(IcesiException.class, () -> documentService.updateDocument(document.getIcesiDocumentId().toString(), documentUpdatedDTO));
 
         // Assert
         var error = exception.getError();
@@ -100,15 +101,15 @@ public class UpdateDocumentTest {
     public void TestUpdate_WhenDocumentIsOnApprovedTheTextCantBeModified(){
         // Arrange
         var user = defaultUser();
-        var documentDTO = defaultDocument();
-        documentDTO.setStatus(IcesiDocumentStatus.APPROVED);
-        var documentUpdated = defaultDocumentDTO();
-        documentUpdated.setText(documentDTO.getText()+"1");
+        var document = defaultDocument();
+        document.setStatus(IcesiDocumentStatus.APPROVED);
+        var documentUpdatedDTO = defaultDocumentDTO();
+        documentUpdatedDTO.setText(document.getText()+"1");
         when(userRepository.findById(any())).thenReturn(Optional.of(user));
-        when(documentRepository.findByTitle(any())).thenReturn(Optional.of(documentDTO));
+        when(documentRepository.findById(any())).thenReturn(Optional.of(document));
 
         // Act
-        IcesiException exception = assertThrows(IcesiException.class, () -> documentService.updateDocument(documentDTO.getIcesiDocumentId().toString(), documentUpdated));
+        IcesiException exception = assertThrows(IcesiException.class, () -> documentService.updateDocument(document.getIcesiDocumentId().toString(), documentUpdatedDTO));
 
         // Assert
         var error = exception.getError();
@@ -120,5 +121,151 @@ public class UpdateDocumentTest {
         assertEquals("field Text can not be updated because the document status is "+IcesiDocumentStatus.APPROVED, detail.getErrorMessage(), "Error message doesn't match");
         verify(documentRepository, times(0)).updateDocument(any(), any(), any(), any());
         verify(documentMapper, times(0)).fromIcesiDocument(any());
+    }
+
+    @Test
+    public void TestUpdate_WhenThereIsNoDocumentWithTheProvidedId(){
+        // Arrange
+        var user = defaultUser();
+        var documentUpdatedDTO = defaultDocumentDTO();
+        var document = defaultDocument();
+        when(userRepository.findById(any())).thenReturn(Optional.of(user));
+        when(documentRepository.findById(any())).thenReturn(Optional.empty());
+
+        // Act
+        IcesiException exception = assertThrows(IcesiException.class, () -> documentService.updateDocument(document.getIcesiDocumentId().toString(), documentUpdatedDTO));
+
+        // Assert
+        var error = exception.getError();
+        var details = error.getDetails();
+        assertEquals(1, details.size());
+        var detail = details.get(0);
+        assertEquals("Document not found", exception.getMessage());
+        assertEquals("ERR_404", detail.getErrorCode(), "Code doesn't match");
+        assertEquals("Document with Document Id: "+document.getIcesiDocumentId() + " not found", detail.getErrorMessage(), "Error message doesn't match");
+        verify(documentRepository, times(0)).updateDocument(any(), any(), any(), any());
+        verify(documentMapper, times(0)).fromIcesiDocument(any());
+    }
+
+    @Test
+    public void TestUpdate_WhenTryingToChangeTheUser(){
+        // Arrange
+        var user = defaultUser();
+        var documentUpdatedDTO = defaultDocumentDTO();
+        documentUpdatedDTO.setUserId(UUID.fromString("08a4db02-6625-1234-abcd-088add3a494f"));
+        when(userRepository.findById(any())).thenReturn(Optional.of(user));
+        when(documentRepository.findById(any())).thenReturn(Optional.of(defaultDocument()));
+
+        // Act
+        IcesiException exception = assertThrows(IcesiException.class, () -> documentService.updateDocument(documentUpdatedDTO.getIcesiDocumentId().toString(), documentUpdatedDTO));
+
+        // Assert
+        var error = exception.getError();
+        var details = error.getDetails();
+        assertEquals(1, details.size());
+        var detail = details.get(0);
+        assertEquals("The user can not be updated", exception.getMessage());
+        assertEquals("ERR_400", detail.getErrorCode(), "Code doesn't match");
+        assertEquals("field User can not be updated", detail.getErrorMessage(), "Error message doesn't match");
+        verify(documentRepository, times(0)).updateDocument(any(), any(), any(), any());
+        verify(documentMapper, times(0)).fromIcesiDocument(any());
+    }
+
+    @Test
+    public void TestUpdate_WhenTryingToSetAnExistingTitle(){
+        // Arrange
+        var user = defaultUser();
+        var documentUpdatedDTO = defaultDocumentDTO();
+        var document = defaultDocument();
+        when(userRepository.findById(any())).thenReturn(Optional.of(user));
+        when(documentRepository.findById(any())).thenReturn(Optional.of(document));
+        when(documentRepository.findByTitle(any())).thenReturn(Optional.of(document));
+
+        // Act
+        IcesiException exception = assertThrows(IcesiException.class, () -> documentService.updateDocument(documentUpdatedDTO.getIcesiDocumentId().toString(), documentUpdatedDTO));
+
+        // Assert
+        var error = exception.getError();
+        var details = error.getDetails();
+        assertEquals(1, details.size());
+        var detail = details.get(0);
+        assertEquals("The title " + document.getTitle() + " already exists", exception.getMessage());
+        assertEquals("ERR_DUPLICATED", detail.getErrorCode(), "Code doesn't match");
+        assertEquals("resource Document with field Title: " + document.getTitle() + ", already exists", detail.getErrorMessage(), "Error message doesn't match");
+        verify(documentRepository, times(0)).updateDocument(any(), any(), any(), any());
+        verify(documentMapper, times(0)).fromIcesiDocument(any());
+    }
+
+    @Test
+    public void TestUpdate_WhenTheDocumentUpdatedIsNoLongerInTheDB(){
+        // Arrange
+        var user = defaultUser();
+        var documentUpdatedDTO = defaultDocumentDTO();
+        var document = defaultDocument();
+        when(userRepository.findById(any())).thenReturn(Optional.of(user));
+        when(documentRepository.findById(any())).thenReturn(Optional.of(document), Optional.empty());
+        when(documentRepository.findByTitle(any())).thenReturn(Optional.empty());
+
+        // Act
+        IcesiException exception = assertThrows(IcesiException.class, () -> documentService.updateDocument(documentUpdatedDTO.getIcesiDocumentId().toString(), documentUpdatedDTO));
+
+        // Assert
+        var error = exception.getError();
+        var details = error.getDetails();
+        assertEquals(1, details.size());
+        var detail = details.get(0);
+        assertEquals("The document that was just updated no longer exists", exception.getMessage());
+        assertEquals("ERR_500", detail.getErrorCode(), "Code doesn't match");
+        assertEquals("Oops, we ran into an error", detail.getErrorMessage(), "Error message doesn't match");
+        verify(documentRepository, times(1)).updateDocument(any(), any(), any(), any());
+        verify(documentRepository, times(1)).findByTitle(any());
+        verify(documentMapper, times(0)).fromIcesiDocument(any());
+    }
+
+    @Test
+    public void TestUpdate_WhenTheNewDocumentIdAlreadyExists(){
+        // Arrange
+        var user = defaultUser();
+        var documentUpdatedDTO = defaultDocumentDTO();
+        documentUpdatedDTO.setIcesiDocumentId(UUID.fromString("08a4db02-6625-1234-abcd-088add3a494f"));
+        var document = defaultDocument();
+        when(userRepository.findById(any())).thenReturn(Optional.of(user));
+        when(documentRepository.findById(any())).thenReturn(Optional.of(document), Optional.of(document));
+        when(documentRepository.findByTitle(any())).thenReturn(Optional.empty());
+
+        IcesiException exception = assertThrows(IcesiException.class, () -> documentService.updateDocument(document.getIcesiDocumentId().toString(), documentUpdatedDTO));
+
+        // Assert
+        var error = exception.getError();
+        var details = error.getDetails();
+        assertEquals(1, details.size());
+        var detail = details.get(0);
+        assertEquals("The document id " + documentUpdatedDTO.getIcesiDocumentId() + " already exists", exception.getMessage());
+        assertEquals("ERR_DUPLICATED", detail.getErrorCode(), "Code doesn't match");
+        assertEquals("resource Document with field Id: "+ documentUpdatedDTO.getIcesiDocumentId() +", already exists", detail.getErrorMessage(), "Error message doesn't match");
+        verify(documentRepository, times(0)).updateDocument(any(), any(), any(), any());
+        verify(documentRepository, times(1)).findByTitle(any());
+        verify(documentRepository, times(2)).findById(any());
+        verify(documentMapper, times(0)).fromIcesiDocument(any());
+    }
+
+    @Test
+    public void TestUpdate_HappyPath(){
+        // Arrange
+        var user = defaultUser();
+        var documentUpdatedDTO = defaultDocumentDTO();
+        var document = defaultDocument();
+        when(userRepository.findById(any())).thenReturn(Optional.of(user));
+        when(documentRepository.findById(any())).thenReturn(Optional.of(document), Optional.of(document));
+        when(documentRepository.findByTitle(any())).thenReturn(Optional.ofNullable(null));
+
+        // Act
+        documentService.updateDocument(documentUpdatedDTO.getIcesiDocumentId().toString(), documentUpdatedDTO);
+
+        // Assert
+        verify(documentRepository, times(1)).updateDocument(any(), any(), any(), any());
+        verify(documentRepository, times(1)).findByTitle(any());
+        verify(documentRepository, times(2)).findById(any());
+        verify(documentMapper, times(1)).fromIcesiDocument(any());
     }
 }
