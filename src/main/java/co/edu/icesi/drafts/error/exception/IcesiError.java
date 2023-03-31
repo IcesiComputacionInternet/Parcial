@@ -1,14 +1,15 @@
 package co.edu.icesi.drafts.error.exception;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.Getter;
+import lombok.*;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
 @Getter
+@Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class IcesiError {
 
     private HttpStatus status;
