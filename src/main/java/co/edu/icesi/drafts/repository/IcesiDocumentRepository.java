@@ -18,7 +18,4 @@ public interface IcesiDocumentRepository extends JpaRepository<IcesiDocument, UU
 
     @Query("SELECT a FROM IcesiDocument a WHERE a.icesiDocumentId = :icesiDocumentId AND a.status <> 3")
     Optional<IcesiDocument> getTypeofDocument(@Param("icesiDocumentId") String icesiDocumentId);
-
-    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END AS titleExist FROM IcesiDocument u WHERE u.title = :title")
-    Boolean existsByTitle(@Param("title")String title);
 }

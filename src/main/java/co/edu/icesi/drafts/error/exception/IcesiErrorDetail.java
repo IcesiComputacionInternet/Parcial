@@ -7,7 +7,7 @@ import lombok.Getter;
 
 @Builder
 @Data
-@AllArgsConstructor
+    @AllArgsConstructor
 public class IcesiErrorDetail {
 
     private String errorCode;
