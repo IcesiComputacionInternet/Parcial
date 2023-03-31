@@ -110,6 +110,7 @@ public class DocumentServiceTest {
 
         when(userRepository.findById(any())).thenReturn(Optional.of(user));
         when(documentRepository.findByTitle(any())).thenReturn(Optional.empty());
+        when(documentRepository.saveAll(any())).thenReturn(defaultDocuments());
 
         documentService.createDocuments(documentsDTO);
 
@@ -161,7 +162,7 @@ public class DocumentServiceTest {
                 .text("loreipsum1")
                 .userId(UUID.fromString("d36dec17-5c40-461c-b168-9c6f59924db0"))
                 .build());
-        var user = defaultUser();
+        var user = defaultUser(); // This user is never used, teacher :)
 
         when(userRepository.findById(UUID.fromString("08a4db02-6625-40ee-b782-088add3a494f"))).thenReturn(Optional.empty());
         when(userRepository.findById(UUID.fromString("d36dec17-5c40-461c-b168-9c6f59924db0"))).thenReturn(Optional.of(defaultUser()));
