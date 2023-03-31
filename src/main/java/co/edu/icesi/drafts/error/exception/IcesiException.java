@@ -1,6 +1,5 @@
 package co.edu.icesi.drafts.error.exception;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 

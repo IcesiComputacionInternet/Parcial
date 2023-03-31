@@ -1,8 +1,6 @@
 package co.edu.icesi.drafts.error.exception;
 
-import lombok.Builder;
 import lombok.Getter;
-
 
 @Getter
 public class DetailBuilder {
