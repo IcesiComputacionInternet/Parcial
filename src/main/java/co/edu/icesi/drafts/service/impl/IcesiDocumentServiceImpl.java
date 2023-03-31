@@ -7,6 +7,7 @@ import co.edu.icesi.drafts.error.util.IcesiExceptionBuilder;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
 import co.edu.icesi.drafts.model.IcesiDocument;
 import co.edu.icesi.drafts.model.IcesiDocumentStatus;
+import co.edu.icesi.drafts.model.IcesiUser;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
@@ -48,7 +49,42 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public List<IcesiDocumentDTO> createDocuments(List<IcesiDocumentDTO> documentsDTO) {
-        return null;
+        List<IcesiDocument> documents = documentsDTO.stream()
+                .map(x -> documentMapper.fromIcesiDocumentDTO(x)).toList();
+
+        assignUsersToDocuments(documentsDTO, documents);
+
+        return documentRepository.saveAll(documents).stream()
+                .map(x -> documentMapper.fromIcesiDocument(x)).toList();
+    }
+
+    private List<DetailBuilder> assignUsersToDocuments(List<IcesiDocumentDTO> documentsDTO, List<IcesiDocument> documents){
+        List<DetailBuilder> details = new ArrayList<>();
+        for(int i = 0; i < documentsDTO.size(); i++){
+            Optional<IcesiUser> optionalIcesiUser = userRepository.findById(documentsDTO.get(i).getUserId());
+            if (optionalIcesiUser.isPresent()){
+                documents.get(i).setIcesiUser(optionalIcesiUser.get());
+            }else {
+                details.add(new DetailBuilder(ErrorCode.ERR_404, "User", "Id", documentsDTO.get(i).getUserId()));
+            }
+        }
+        return details;
+    }
+
+    private void checkThatAllUsersExist(List<IcesiDocumentDTO> documentsDTO){
+        List<DetailBuilder> details = new ArrayList<>();
+        for(IcesiDocumentDTO icesiDocumentDTO: documentsDTO){
+            if(!userRepository.findById(icesiDocumentDTO.getUserId()).isPresent()){
+                details.add(new DetailBuilder(ErrorCode.ERR_404, "User", "Id", icesiDocumentDTO.getUserId()));
+            };
+        }
+        if(!details.isEmpty()){
+            throw createIcesiException(
+                    "Some users do not exist",
+                    HttpStatus.NOT_FOUND,
+                    details.stream().toArray(DetailBuilder[]::new)
+            ).get();
+        }
     }
 
     @Override
@@ -117,18 +153,22 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
     public IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO) {
         checkIfUserIdInDTOIsNull(icesiDocumentDTO);
         checkIfTitleExists(icesiDocumentDTO.getTitle());
-        var user = userRepository.findById(icesiDocumentDTO.getUserId())
-                .orElseThrow(
-                        createIcesiException(
-                                "User not found",
-                                HttpStatus.NOT_FOUND,
-                                new DetailBuilder(ErrorCode.ERR_404, "User", "Id", icesiDocumentDTO.getUserId())
-                        )
-                );
+        var user = checkIfUserExists(icesiDocumentDTO.getUserId());
         var icesiDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
 
         icesiDocument.setIcesiUser(user);
         return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocument));
+    }
+
+    private IcesiUser checkIfUserExists(UUID userId){
+        return userRepository.findById(userId)
+                .orElseThrow(
+                    createIcesiException(
+                        "User not found",
+                        HttpStatus.NOT_FOUND,
+                        new DetailBuilder(ErrorCode.ERR_404, "User", "Id", userId)
+                    )
+                );
     }
 
     private void checkIfUserIdInDTOIsNull(IcesiDocumentDTO icesiDocumentDTO){

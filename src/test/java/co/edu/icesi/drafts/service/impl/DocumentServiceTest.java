@@ -128,6 +128,7 @@ public class DocumentServiceTest {
 
         when(userRepository.findById(any())).thenReturn(Optional.of(user));
         when(documentRepository.findByTitle(any())).thenReturn(Optional.empty());
+        when(documentRepository.saveAll(any())).thenReturn(defaultDocuments()); //Tuve que hacer agregar esta linea porque sino el ultimo verify nunca se iba a cumplir, ya que me estaba devolviendo una lista vacia
 
         documentService.createDocuments(documentsDTO);
 
