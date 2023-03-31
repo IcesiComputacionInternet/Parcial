@@ -14,5 +14,4 @@ public class DetailBuilder {
         this.errorCode = errorCode;
         this.fields = fields;
     }
-
 }

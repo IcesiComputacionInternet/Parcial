@@ -16,8 +16,9 @@ public class IcesiExceptionBuilder {
         return () -> new IcesiException(message, createIcesiError(message, httpStatus, details));
     }
 
-    public static IcesiError createIcesiError(String message, HttpStatus httpStatus,DetailBuilder... details){
-        return IcesiError.builder().status(httpStatus)
+    public static IcesiError createIcesiError(String message, HttpStatus httpStatus, DetailBuilder... details){
+        return IcesiError.builder()
+                .status(httpStatus)
                 .details(
                         Arrays.stream(details)
                                 .map(IcesiExceptionBuilder::mapToIcesiErrorDetail)
@@ -30,7 +31,5 @@ public class IcesiExceptionBuilder {
                 .errorCode(detailBuilder.getErrorCode().getCode())
                 .errorMessage(detailBuilder.getErrorCode().getMessage().formatted(detailBuilder.getFields()))
                 .build();
-
     }
-
 }

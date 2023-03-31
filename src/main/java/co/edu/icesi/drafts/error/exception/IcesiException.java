@@ -13,7 +13,4 @@ public class IcesiException extends RuntimeException {
         super(message);
         this.error = error;
     }
-
-
-
 }

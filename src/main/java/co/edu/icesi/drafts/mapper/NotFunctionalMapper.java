@@ -2,6 +2,7 @@ package co.edu.icesi.drafts.mapper;
 
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.model.IcesiDocument;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 @Component

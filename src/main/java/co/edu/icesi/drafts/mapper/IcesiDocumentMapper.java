@@ -6,7 +6,6 @@ import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
 public interface IcesiDocumentMapper {
-
     IcesiDocumentDTO fromIcesiDocument(IcesiDocument icesiDocument);
 
     IcesiDocument fromIcesiDocumentDTO(IcesiDocumentDTO icesiDocumentDTO);

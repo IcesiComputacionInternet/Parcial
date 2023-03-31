@@ -15,5 +15,4 @@ public enum ErrorCode {
     ERR_DUPLICATED("ERR_DUPLICATED", "resource %s with field %s: %s, already exists");
     private final String code;
     private final String message;
-
 }
