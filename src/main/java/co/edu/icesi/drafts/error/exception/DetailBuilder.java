@@ -15,4 +15,5 @@ public class DetailBuilder {
         this.fields = fields;
     }
 
+
 }
