@@ -6,15 +6,16 @@ import co.edu.icesi.drafts.error.exception.*;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
 import co.edu.icesi.drafts.model.IcesiDocument;
 import co.edu.icesi.drafts.model.IcesiDocumentStatus;
+import co.edu.icesi.drafts.model.IcesiUser;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
@@ -59,36 +60,25 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
 
     @Override
     public IcesiDocumentDTO updateDocument(String documentId, IcesiDocumentDTO icesiDocumentDTO) {
-        var document = documentRepository.findById(documentId)
-                .orElseThrow(
-                        createIcesiException(
-                                "Document not found",
-                                HttpStatus.NOT_FOUND,
-                                new DetailBuilder(ErrorCode.ERR_404,"Document","Id",documentId)
-                        )
-                );
+        var document = catchExistsDocumentId(documentId);
         if(document.getStatus().equals(IcesiDocumentStatus.APPROVED)){
             throw createIcesiException(
-                    "Documents is APROVED",
+                    "Documents is APPROVED",
                     HttpStatus.BAD_REQUEST,
                     new DetailBuilder(ErrorCode.ERR_400, "Document","Status", icesiDocumentDTO.getStatus())
             ).get();
         }
-        document.setTitle(icesiDocumentDTO.getTitle());
+        if(!icesiDocumentDTO.getTitle().equals(document.getTitle())){
+            catchExistsDocumentTitle(document.getTitle());
+            document.setTitle(icesiDocumentDTO.getTitle());
+        }
         document.setText(icesiDocumentDTO.getText());
-        document.setStatus(icesiDocumentDTO.getStatus());
         return documentMapper.fromIcesiDocument(documentRepository.save(document));
     }
 
     @Override
     public IcesiDocumentDTO createDocument(IcesiDocumentDTO icesiDocumentDTO) {
-        if(documentRepository.findByTitle(icesiDocumentDTO.getTitle()).isPresent()) {
-            throw createIcesiException(
-                    "Title already exists",
-                    HttpStatus.BAD_REQUEST,
-                    new DetailBuilder(ErrorCode.ERR_DUPLICATED, "Document", "Title", icesiDocumentDTO.getTitle())
-            ).get();
-        }
+        catchExistsDocumentTitle(icesiDocumentDTO.getTitle());
         if(icesiDocumentDTO.getUserId() == null){
             throw createIcesiException(
                     "User is null",
@@ -96,19 +86,43 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
                     new DetailBuilder(ErrorCode.ERR_REQUIRED_FIELD, "userId")
             ).get();
         }
-        var user = userRepository.findById(icesiDocumentDTO.getUserId())
-                .orElseThrow(
-                        createIcesiException(
-                                "User not found",
-                                HttpStatus.NOT_FOUND,
-                                new DetailBuilder(ErrorCode.ERR_404, "User", "Id", icesiDocumentDTO.getUserId())
-                        )
-                );
+
+        var user = catchExistsUserId(icesiDocumentDTO.getUserId());
+
         var icesiDocument = documentMapper.fromIcesiDocumentDTO(icesiDocumentDTO);
         icesiDocument.setIcesiUser(user);
         return documentMapper.fromIcesiDocument(documentRepository.save(icesiDocument));
     }
 
+    private void catchExistsDocumentTitle(String title){
+        if(documentRepository.findByTitle(title).isPresent()){
+            throw createIcesiException(
+                    "Title already exists",
+                    HttpStatus.BAD_REQUEST,
+                    new DetailBuilder(ErrorCode.ERR_DUPLICATED,"Document","Title",title)
+            ).get();
+        }
+    }
+    private IcesiDocument catchExistsDocumentId(String documentId){
+        return documentRepository.findById(documentId)
+                .orElseThrow(
+                        createIcesiException(
+                                "Document not found",
+                                HttpStatus.NOT_FOUND,
+                                new DetailBuilder(ErrorCode.ERR_404,"Document","Id",documentId)
+                        )
+                );
+    }
+    private IcesiUser catchExistsUserId(UUID userId){
+        return userRepository.findById(userId)
+                .orElseThrow(
+                        createIcesiException(
+                                "User not found",
+                                HttpStatus.NOT_FOUND,
+                                new DetailBuilder(ErrorCode.ERR_404, "User", "Id", userId)
+                        )
+                );
+    }
     private void catchErrorsInCreateDocuments(List<IcesiDocumentDTO> documentDTOS) {
         List<DetailBuilder> detailErrors = new ArrayList<>();
         detailErrors.addAll(documentDTOS.stream()
