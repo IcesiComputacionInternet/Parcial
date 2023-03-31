@@ -99,6 +99,7 @@ public class DocumentServiceTest {
         assertEquals("resource Document with field Title: Some title, already exists", detail.getErrorMessage(), "Error message doesn't match");
     }
 
+
     @Test
     @DisplayName("Create documents success")
     public void createDocuments_HappyPath() {
@@ -109,6 +110,7 @@ public class DocumentServiceTest {
 
         when(userRepository.findById(any())).thenReturn(Optional.of(user));
         when(documentRepository.findByTitle(any())).thenReturn(Optional.empty());
+        when(documentRepository.saveAll(any())).thenReturn(documents);
 
         documentService.createDocuments(documentsDTO);
 
