@@ -1,9 +1,11 @@
 package co.edu.icesi.drafts.service.impl;
 
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
+import co.edu.icesi.drafts.error.exception.IcesiException;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapperImpl;
 import co.edu.icesi.drafts.model.IcesiDocument;
+import co.edu.icesi.drafts.model.IcesiDocumentStatus;
 import co.edu.icesi.drafts.model.IcesiUser;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
@@ -14,8 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class UpdateDocumentTest {
@@ -39,14 +40,27 @@ public class UpdateDocumentTest {
 
     @Test
     public void TestUpdate_WhenDocumentIsOnApprovedCantBeModified(){
-        //TODO implement test!
-        fail();
+
+        var document= defaultDocument();
+        document.setStatus(IcesiDocumentStatus.APPROVED);
+
+        when(documentRepository.findById(any())).thenReturn(Optional.of(document));
+
+        var exception = assertThrows(IcesiException.class, () -> documentService.updateDocument(updateDocumentDTO().getIcesiDocumentId().toString(), updateDocumentDTO()), "No exception was thrown");
+
+        var error = exception.getError();
+        var details = error.getDetails();
+        assertEquals(1, details.size());
+        var detail = details.get(0);
+        assertEquals("ERR_400", detail.getErrorCode(), "Code doesn't match");
+        assertEquals("field Status APPROVED", detail.getErrorMessage(), "Error message doesn't match");
     }
+
 
     @Test
     public void TestUpdate_HappyPath(){
 
-        when(documentRepository.findById(any())).thenReturn(Optional.of(defaultDocument()));
+       when(documentRepository.findById(any())).thenReturn(Optional.of(defaultDocument()));
 
         IcesiDocumentDTO icesiDocumentDTO= documentService.updateDocument(defaultDocument().getIcesiDocumentId().toString(),updateDocumentDTO());
 
@@ -63,6 +77,7 @@ public class UpdateDocumentTest {
                 .title("Some title2")
                 .text("loreipsum loreipsum")
                 .userId(UUID.fromString("08a4db02-6625-40ee-b782-088add3a494f"))
+
                 .build();
     }
 

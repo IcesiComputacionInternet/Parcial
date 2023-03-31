@@ -1,6 +1,5 @@
 package co.edu.icesi.drafts.service.impl;
 
-import co.edu.icesi.drafts.controller.IcesiDocumentController;
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
 import co.edu.icesi.drafts.error.exception.*;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
@@ -10,10 +9,6 @@ import co.edu.icesi.drafts.model.IcesiUser;
 import co.edu.icesi.drafts.repository.IcesiDocumentRepository;
 import co.edu.icesi.drafts.repository.IcesiUserRepository;
 import co.edu.icesi.drafts.service.IcesiDocumentService;
-import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +18,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
-import static java.util.stream.Collectors.toList;
 
 
 @Service
@@ -78,7 +72,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
          if(!details.isEmpty()){
              throw createIcesiException(
                      "Can't create documents",
-                     HttpStatus.NOT_FOUND,
+                     HttpStatus.BAD_REQUEST,
                      details.toArray(DetailBuilder[]::new)
              ).get();
          }
@@ -114,7 +108,11 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
         IcesiUser icesiUser= icesiDocument.getIcesiUser();
         validateUpdateDocumentUser(icesiUser.getIcesiUserId(),icesiDocumentDTO.getUserId());
         if(icesiDocument.getStatus()== IcesiDocumentStatus.APPROVED){
-            throw new RuntimeException("Document can't be updated. Is on approved");
+            throw createIcesiException(
+                    "Document can't be modified",
+                    HttpStatus.BAD_REQUEST,
+                    new DetailBuilder(ErrorCode.ERR_400, "Status", IcesiDocumentStatus.APPROVED)
+            ).get();
         }
 
         validateUniqueTitle(icesiDocumentDTO.getTitle());
@@ -132,7 +130,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
         if(documentRepository.findByTitle(title).isPresent()){
             throw createIcesiException(
                     "Title already exists",
-                    HttpStatus.NOT_FOUND,
+                    HttpStatus.BAD_REQUEST,
                     new DetailBuilder(ErrorCode.ERR_DUPLICATED, "Document", "Title",title)
             ).get();
         }
@@ -166,7 +164,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
         return   Optional.ofNullable(userId).orElseThrow(
                 createIcesiException(
                         "User not given",
-                        HttpStatus.NOT_FOUND,
+                        HttpStatus.BAD_REQUEST,
                         new DetailBuilder(ErrorCode.ERR_REQUIRED_FIELD, "userId")
                 )
         );
