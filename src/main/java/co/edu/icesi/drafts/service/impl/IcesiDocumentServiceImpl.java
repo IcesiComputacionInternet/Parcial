@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import static co.edu.icesi.drafts.error.util.IcesiExceptionBuilder.createIcesiException;
 
@@ -54,11 +55,7 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
         List<IcesiUser> users = documentsDTO.stream()
                 .map(IcesiDocumentDTO::getUserId)
                 .map(user-> userRepository.findById(user).orElseGet(
-                        ()->{details.add(
-                                new DetailBuilder(ErrorCode.ERR_404, "User", "Id",user )
-                        );
-                            return null;
-                        }
+                        ()-> addToDetails(user, details)
                 )).toList();
 
         documentsDTO.stream()
@@ -95,6 +92,12 @@ class IcesiDocumentServiceImpl implements IcesiDocumentService {
         return documents.stream().map(documentMapper::fromIcesiDocument).toList();
     }
 
+    public IcesiUser addToDetails(UUID userId, List<DetailBuilder> details){
+        details.add(
+                new DetailBuilder(ErrorCode.ERR_404, "User", "Id",userId )
+        );
+        return null;
+    }
 
 
     /*
