@@ -44,7 +44,7 @@ public class UpdateDocumentTest {
     }
 
     @Test
-    public void TestUpdate(){
+    public void TestUpdate_HappyPath(){
 
         when(documentRepository.findById(any())).thenReturn(Optional.of(defaultDocument()));
 
