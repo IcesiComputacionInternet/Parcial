@@ -1,6 +1,7 @@
 package co.edu.icesi.drafts.service.impl;
 
 import co.edu.icesi.drafts.dto.IcesiDocumentDTO;
+import co.edu.icesi.drafts.error.exception.IcesiException;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapper;
 import co.edu.icesi.drafts.mapper.IcesiDocumentMapperImpl;
 import co.edu.icesi.drafts.model.IcesiDocument;
@@ -15,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class UpdateDocumentTest {
@@ -38,21 +39,58 @@ public class UpdateDocumentTest {
     }
 
     @Test
-    public void TestUpdate_WhenDocumentIsOnApprovedCantBeModified(){
-        //TODO implement test!
-        fail();
-    }
-
-    @Test
-    public void testUpdate() {
+    public void testUpdate_HappyPath() {
         when(documentRepository.findById(any(UUID.class))).thenReturn(Optional.ofNullable(defaultDocument()));
-        IcesiDocumentDTO updatedDocument = defaultDocumentDTO();
+        when(documentRepository.findByTitle(any(String.class))).thenReturn(Optional.empty());
+
+        var updatedDocument = defaultDocumentDTO();
         updatedDocument.setTitle("New title");
         updatedDocument.setText("New text");
 
         documentService.updateDocument(defaultDocumentDTO().getIcesiDocumentId().toString(), updatedDocument);
         verify(documentRepository, times(1)).save(any(IcesiDocument.class));
+        assertNotEquals(defaultDocumentDTO().getTitle(), updatedDocument.getTitle());
+        assertNotEquals(defaultDocumentDTO().getText(), updatedDocument.getText());
+    }
 
+    @Test
+    public void TestUpdate_WhenDocumentIsOnApprovedCantBeModified(){
+        var documentApproved = defaultDocument();
+        documentApproved.setStatus(IcesiDocumentStatus.APPROVED);
+        when(documentRepository.findById(any())).thenReturn(Optional.of(documentApproved));
+
+        var exception = assertThrows(IcesiException.class, () ->
+                documentService.updateDocument(UUID.randomUUID().toString(), defaultDocumentDTO())
+        );
+
+        var error = exception.getError();
+        var details = error.getDetails();
+        assertEquals(1, details.size());
+        var detail = details.get(0);
+        assertEquals("ERR_500",detail.getErrorCode());
+        assertEquals("Oops, we ran into an error",detail.getErrorMessage());
+        verify(documentRepository, times(0)).save(any(IcesiDocument.class));
+    }
+
+    @Test
+    public void testUpdate_WhenTitleAlreadyExists() {
+        when(documentRepository.findById(any(UUID.class))).thenReturn(Optional.ofNullable(defaultDocument()));
+        when(documentRepository.findByTitle(any(String.class))).thenReturn(Optional.of(defaultDocument()));
+
+        var updatedDocument = defaultDocumentDTO();
+        updatedDocument.setText("New text");
+
+        var exception = assertThrows(IcesiException.class, () ->
+                documentService.updateDocument(defaultDocumentDTO().getIcesiDocumentId().toString(), updatedDocument)
+        );
+
+        var error = exception.getError();
+        var details = error.getDetails();
+        assertEquals(1, details.size());
+        var detail = details.get(0);
+        assertEquals("ERR_DUPLICATED",detail.getErrorCode());
+        assertEquals("resource Document with field Title: " + updatedDocument.getTitle() + ", already exists",detail.getErrorMessage());
+        verify(documentRepository, times(0)).save(any(IcesiDocument.class));
     }
 
     private IcesiDocumentDTO defaultDocumentDTO() {
